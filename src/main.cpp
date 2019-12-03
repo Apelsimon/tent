@@ -1,5 +1,7 @@
 #include "test.hpp"
 
+#include <libtorrent/session.hpp>
+
 #include <iostream>
 
 int main()
