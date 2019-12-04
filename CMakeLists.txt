@@ -9,8 +9,8 @@ add_subdirectory(libtorrent)
 add_subdirectory(test)
 
 set(SRC
+    src/file_reader.cpp
     src/main.cpp
-    src/test.cpp
 )
 
 # dependencies 
