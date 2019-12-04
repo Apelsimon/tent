@@ -14,38 +14,34 @@ set(SRC
 )
 
 # dependencies 
-find_library( LIBTORRENT NAMES libtorrent
+find_library( LIBTORRENT NAMES libtorrent-rasterbar.so
     PATHS
-        ${PROJECT_BINARY_DIR}/libtorrent/    
-    REQUIRED
+        ${PROJECT_SOURCE_DIR}/libtorrent/build    
+    REQUIRED 
 )
+
+find_package(Boost COMPONENTS system REQUIRED)
 
 set(DEPENDENCIES
     ${LIBTORRENT}
+    ${Boost_LIBRARIES}
+)
+
+set(INCLUDES
+    ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/libtorrent/include
+    ${Boost_INCLUDE_DIRS}
 )
 
 # tent exe
 add_executable(${PROJECT_NAME} ${SRC})
-target_include_directories(${PROJECT_NAME} PUBLIC 
-    ${PROJECT_SOURCE_DIR}/include
-    ${PROJECT_SOURCE_DIR}/libtorrent/include
-)
+target_include_directories(${PROJECT_NAME} PUBLIC ${INCLUDES})
 target_link_libraries(${PROJECT_NAME} ${DEPENDENCIES})
 
 
 # tent lib
 add_library(${PROJECT_NAME}_ STATIC ${SRC})
-target_include_directories(${PROJECT_NAME}_ PUBLIC 
-    ${PROJECT_SOURCE_DIR}/include
-    ${PROJECT_SOURCE_DIR}/libtorrent/include
-)
+target_include_directories(${PROJECT_NAME}_ PUBLIC ${INCLUDES})
 target_link_libraries(${PROJECT_NAME}_ ${DEPENDENCIES})
 
-# boost dependencies 
-find_package(Boost COMPONENTS system REQUIRED)
 
-if(Boost_FOUND)
-    include_directories(${Boost_INCLUDE_DIRS})
-    target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES})
-    target_link_libraries(${PROJECT_NAME}_ ${Boost_LIBRARIES})
-endif()
