@@ -5,11 +5,14 @@ project(tent)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
+add_subdirectory(curlpp)
 add_subdirectory(libtorrent)
 add_subdirectory(test)
 
 set(SRC
     src/file_reader.cpp
+    src/http_client.cpp
+    src/http_messages.cpp
     src/main.cpp
 )
 
@@ -25,6 +28,7 @@ find_package(Boost COMPONENTS system REQUIRED)
 set(DEPENDENCIES
     ${LIBTORRENT}
     ${Boost_LIBRARIES}
+    curlpp
 )
 
 set(INCLUDES

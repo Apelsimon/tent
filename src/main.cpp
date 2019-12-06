@@ -1,4 +1,6 @@
 #include "file_reader.hpp"
+#include "http_client.hpp"
+#include "http_messages.hpp"
 
 #include "libtorrent/torrent_info.hpp"
 
@@ -40,7 +42,8 @@ int main(int argc, char* argv[])
         , torrent_info.name().c_str()
         , torrent_info.num_files());
 
-
-
     
+
+    tent::http::client http_client;
+    auto resp = http_client.get("http://www.example.com");    
 }
