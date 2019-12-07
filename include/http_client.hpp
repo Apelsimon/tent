@@ -15,6 +15,8 @@ class imessage;
 class client
 {
 public:
+    ~client();
+    
     std::unique_ptr<imessage> get(const std::string& url);
     
 private:
