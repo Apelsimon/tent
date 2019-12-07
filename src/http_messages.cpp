@@ -16,9 +16,9 @@ status_code response::status() const
 }
 
 
-std::string response::field(header_field hfield)
+std::string response::field(header_field hfield) const
 {
-    return header_fields_[hfield];
+    return header_fields_.at(hfield);
 }
 
 size_t response::header_cb(char* buffer, size_t size, size_t nitems)

@@ -1,6 +1,8 @@
 #ifndef TRACKER_CLIENT_HPP_
 #define TRACKER_CLIENT_HPP_
 
+#include "peer.hpp"
+
 #include "libtorrent/torrent_info.hpp"
 
 #include <memory>
@@ -21,8 +23,10 @@ public:
     ~tracker_client();
 
     void announce(uint16_t port);
+    const std::vector<peer> peers() const { return peers_; }
     
 private:
+    std::vector<peer> peers_;
     std::unique_ptr<http::client> http_client_;
     const lt::torrent_info torrent_info_;
 };

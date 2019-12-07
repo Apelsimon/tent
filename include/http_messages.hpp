@@ -27,7 +27,7 @@ public:
     virtual ~imessage() = default;
     virtual status_code status() const = 0;
     virtual std::string body() const = 0;
-    virtual std::string field(header_field hfield) = 0;
+    virtual std::string field(header_field hfield) const = 0;
 };
 
 class response : public imessage
@@ -35,7 +35,7 @@ class response : public imessage
 public:
     status_code status() const override;
     std::string body() const override { return body_; }
-    std::string field(header_field hfield);
+    std::string field(header_field hfield) const override;
 
     size_t header_cb(char* buffer, size_t size, size_t nitems);
 
