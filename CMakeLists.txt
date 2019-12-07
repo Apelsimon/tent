@@ -14,7 +14,8 @@ set(SRC
     src/http_client.cpp
     src/http_messages.cpp
     src/main.cpp
-    src/tracker_client.cpp
+    src/net_reactor.cpp
+    src/tracker_client.cpp    
 )
 
 # dependencies 
