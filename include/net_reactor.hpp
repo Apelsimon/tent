@@ -12,6 +12,7 @@ class net_reactor
 {
 public:
     net_reactor();
+    ~net_reactor();
 
     void start();
     void stop();

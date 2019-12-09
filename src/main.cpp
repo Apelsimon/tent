@@ -1,5 +1,6 @@
 #include "file_reader.hpp"
-#include "tracker_client.hpp"
+#include "net_reactor.hpp"
+#include "session.hpp"
 
 #include "libtorrent/torrent_info.hpp"
 
@@ -21,9 +22,11 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    tent::tracker_client tracker_client{torrent_info};
-    tracker_client.announce(12345);  
+    tent::net_reactor reactor;
+    tent::session session{reactor, torrent_info};
 
+    std::cout << "start reactor" << std::endl;
+    reactor.start();
 
     return EXIT_SUCCESS;
 }

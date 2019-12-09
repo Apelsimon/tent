@@ -2,9 +2,10 @@
 
 #include "http_client.hpp"
 #include "http_messages.hpp"
+#include "peer_info.hpp"
 
 static std::string percent_encode(const lt::sha1_hash& hash, std::size_t num = 2, char separator = '%');
-static void parse_peers(std::vector<tent::peer>& peers, const std::string& tracker_rsp);
+static void parse_peers(std::vector<std::unique_ptr<tent::peer_info>>& peers, const std::string& tracker_rsp);
 
 namespace tent
 {
@@ -17,11 +18,12 @@ tracker_client::tracker_client(const lt::torrent_info& info) :
 
 tracker_client::~tracker_client() {}
 
-void tracker_client::announce(uint16_t port)
+bool tracker_client::announce(const std::string& peer_id, uint16_t port, std::vector<std::unique_ptr<peer_info>>& received_peers)
 {
     if(torrent_info_.trackers().empty())
     {
-        return;
+        std::cout << "No trackers available" << std::endl;
+        return false;
     }
 
     // TODO: announce to multiple trackers
@@ -29,7 +31,7 @@ void tracker_client::announce(uint16_t port)
 
     std::stringstream ss;
     ss << tracker.url << "?info_hash=" << percent_encode(torrent_info_.info_hash()) << "&peer_id=" 
-        << "-tent0001-0123456789" << "&port=" << port << "&downloaded=0&uploaded=0&left="
+        << peer_id << "&port=" << port << "&downloaded=0&uploaded=0&left="
         << torrent_info_.total_size() << "&event=started";
 
     auto resp = http_client_->get(ss.str());
@@ -41,10 +43,12 @@ void tracker_client::announce(uint16_t port)
 
     if(resp->status() != http::status_code::OK)
     {
-        return;
+        std::cout << "Announce to trackers failed" << std::endl;
+        return false;
     }
 
-    parse_peers(peers_, resp->body());
+    parse_peers(received_peers, resp->body());
+    return true;
 }
 
 }
@@ -64,7 +68,7 @@ std::string percent_encode(const lt::sha1_hash& hash, std::size_t num, char sepa
     return result;
 }
 
-void parse_peers(std::vector<tent::peer>& peers, const std::string& tracker_rsp)
+void parse_peers(std::vector<std::unique_ptr<tent::peer_info>>& peers, const std::string& tracker_rsp)
 {
     lt::error_code error;
     auto decoded = lt::bdecode(tracker_rsp, error);
@@ -84,6 +88,6 @@ void parse_peers(std::vector<tent::peer>& peers, const std::string& tracker_rsp)
         const auto id = std::string{peer_dict.dict_find_string_value("peer id")};
         const auto ip = std::string{peer_dict.dict_find_string_value("ip")};
         const auto port = peer_dict.dict_find_int_value("port");
-        peers.emplace_back(id, ip, port);
+        peers.push_back(std::make_unique<tent::peer_info>(id, ip, port));
     }    
 }

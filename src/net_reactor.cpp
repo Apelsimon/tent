@@ -11,6 +11,8 @@ net_reactor::net_reactor() : running_(false), efd_(epoll_create1(0))
 
 }
 
+net_reactor::~net_reactor() {}
+
 void net_reactor::start()
 {
     constexpr auto MAX_EVENTS = 10;

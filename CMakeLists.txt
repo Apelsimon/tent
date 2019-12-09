@@ -10,11 +10,15 @@ add_subdirectory(libtorrent)
 add_subdirectory(test)
 
 set(SRC
+    src/endpoint.cpp
     src/file_reader.cpp
     src/http_client.cpp
     src/http_messages.cpp
     src/main.cpp
     src/net_reactor.cpp
+    src/peer_connection.cpp
+    src/session.cpp
+    src/tcp_socket.cpp
     src/tracker_client.cpp    
 )
 
