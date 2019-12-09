@@ -18,6 +18,7 @@ set(SRC
     src/net_reactor.cpp
     src/peer_connection.cpp
     src/session.cpp
+    src/session_sm.cpp
     src/tcp_socket.cpp
     src/tracker_client.cpp    
 )

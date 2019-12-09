@@ -16,6 +16,7 @@ peer_connection::peer_connection(net_reactor& reactor, std::unique_ptr<peer_info
     reactor_(reactor),
     peer_info_(std::move(info)),
     socket_(endpoint{"0.0.0.0", 0}),
+    sm_(*this),
     connected_(false)
 {
     socket_.bind();
@@ -40,16 +41,28 @@ void peer_connection::do_write()
         socklen_t len = sizeof(error);
         if(socket_.getsockopt(SOL_SOCKET, SO_ERROR, &error, &len))
         {
-            std::cout << "fd: " << socket_.fd() << " successfull connect? " << error << ", " 
-                <<  std::strerror(error) << std::endl;
             connected_ = error == 0; // TODO: retry connection on fail
+            if(connected_)
+            {
+                sm_.on_event(session_event::CONNECTED);
+            }
         }
     }
 }
 
-void peer_connection::connect_to_peer()
+void peer_connection::start()
+{
+    sm_.on_event(session_event::START);
+}
+
+void peer_connection::connect()
 {
     socket_.connect(peer_info_->endpoint_);
+}
+
+void peer_connection::handshake() 
+{
+    std::cout << "fd: " << socket_.fd() << " send a lil handshake!" << std::endl;
 }
 
 }

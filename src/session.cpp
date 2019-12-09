@@ -28,12 +28,11 @@ void session::start()
         return;
     }
 
-    // setup peer connections
     for(auto& peer : received_peers)
     {
         auto connection = std::make_unique<peer_connection>(reactor_, std::move(peer));
         connections_.push_back(std::move(connection));
-        connections_.back()->connect_to_peer();
+        connections_.back()->start();
     }
 }
 
