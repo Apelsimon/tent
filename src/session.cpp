@@ -32,7 +32,6 @@ void session::start()
     {
         auto connection = std::make_unique<peer_connection>(reactor_, std::move(peer));
         connections_.push_back(std::move(connection));
-        connections_.back()->start();
     }
 }
 
