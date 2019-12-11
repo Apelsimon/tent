@@ -20,11 +20,11 @@ private:
     void start();
 
     static constexpr uint16_t PORT = 12345;
-    static const std::string PEER_ID;
 
     net_reactor& reactor_;
     std::unique_ptr<tracker_client> tracker_client_;
     std::vector<std::unique_ptr<peer_connection>> connections_;
+    const std::string local_peer_id_;
 
     lt::torrent_info torrent_info_;
 };

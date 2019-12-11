@@ -16,6 +16,7 @@ set(SRC
     src/http_client.cpp
     src/http_messages.cpp
     src/main.cpp
+    src/msg_factory.cpp
     src/net_reactor.cpp
     src/peer_connection.cpp
     src/session.cpp

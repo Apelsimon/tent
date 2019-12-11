@@ -6,6 +6,8 @@
 namespace tent 
 {
 
+class byte_buffer;
+
 class tcp_socket
 {
 public:
@@ -16,6 +18,8 @@ public:
     bool connect(const endpoint& ep);
     bool set_blocking(bool block);
     bool getsockopt(int level, int optname, void *optval, socklen_t *optlen);
+    ssize_t write(byte_buffer& buffer);
+    ssize_t read(byte_buffer& buffer);
     void close();
     bool valid() const { return fd_ != -1; }
     int fd() const { return fd_; }

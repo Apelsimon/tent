@@ -1,5 +1,7 @@
 #include "tcp_socket.hpp"
 
+#include "byte_buffer.hpp"
+
 #include <cstring>
 #include <fcntl.h>
 #include <sstream>
@@ -51,9 +53,8 @@ bool tcp_socket::connect(const endpoint& ep)
 {
     auto sockaddr = ep.sockaddr();
     auto addrlen = sockaddr->sa_family == AF_INET ? sizeof(struct sockaddr_in) :
-        sizeof(struct sockaddr_in6);
-    const auto con_res = ::connect(fd_, sockaddr, addrlen);
-    return  con_res == 0 || errno == EINPROGRESS;
+        sizeof(struct sockaddr_in6);;
+    return ::connect(fd_, sockaddr, addrlen) == 0;
 }
 
 bool tcp_socket::set_blocking(bool block)
@@ -71,6 +72,16 @@ bool tcp_socket::set_blocking(bool block)
 bool tcp_socket::getsockopt(int level, int optname, void *optval, socklen_t *optlen)
 {
     return ::getsockopt(fd_, level, optname, optval, optlen) == 0;
+}
+
+ssize_t tcp_socket::write(byte_buffer& buffer)
+{
+    return ::write(fd_, buffer.get_read(), buffer.read_available());
+}
+
+ssize_t tcp_socket::read(byte_buffer& buffer)
+{
+    return ::read(fd_, buffer.get_write(), buffer.write_available());;
 }
 
 void tcp_socket::close()

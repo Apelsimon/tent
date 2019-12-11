@@ -22,7 +22,8 @@ public:
     tracker_client(const lt::torrent_info& info);
     ~tracker_client();
 
-    bool announce(const std::string& peer_id, uint16_t port, std::vector<std::unique_ptr<peer_info>>& received_peers);
+    bool announce(uint16_t port, const std::string& peer_id, 
+        std::vector<std::unique_ptr<peer_info>>& received_peers);
     
 private:
     std::unique_ptr<http::client> http_client_;

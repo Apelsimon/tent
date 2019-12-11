@@ -18,7 +18,8 @@ tracker_client::tracker_client(const lt::torrent_info& info) :
 
 tracker_client::~tracker_client() {}
 
-bool tracker_client::announce(const std::string& peer_id, uint16_t port, std::vector<std::unique_ptr<peer_info>>& received_peers)
+bool tracker_client::announce(uint16_t port, const std::string& peer_id,
+    std::vector<std::unique_ptr<peer_info>>& received_peers)
 {
     if(torrent_info_.trackers().empty())
     {
@@ -58,7 +59,6 @@ std::string percent_encode(const lt::sha1_hash& hash, std::size_t num, char sepa
     std::stringstream ss;
     ss << separator << hash;
     std::string result = ss.str();
-
     for (auto it = result.begin() + 1; (num+1) <= std::distance(it, result.end()); ++it )
     {
         std::advance(it,num);
