@@ -28,10 +28,19 @@ void session_sm::on_event(session_event ev)
         client_.handshake();
         break;
     }
-    
+    case session_event::HANDSHAKE: 
+    {
+        state_ = HANDSHAKE_RECEIVED;
+        break;
+    }
     default:
         break;
     }
+}
+
+bool session_sm::handshake_received()
+{
+    return state_ >= HANDSHAKE_RECEIVED;
 }
 
 }

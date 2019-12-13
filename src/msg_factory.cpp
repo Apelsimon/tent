@@ -1,5 +1,6 @@
 #include "msg_factory.hpp"
 
+#include "bittorrent_protocol.hpp"
 #include "byte_buffer.hpp"
 #include "peer_info.hpp"
 
@@ -11,14 +12,13 @@ namespace tent
 void msg_factory::handshake(byte_buffer& buffer, const std::string& peer_id, 
     const std::string& info_hash)
 {
-    static const auto PROTO_STR = "BitTorrent protocol";
-    constexpr uint32_t STR_LEN = 19;
+    const uint8_t STR_LEN = protocol::V1.size();
 
     buffer.write_8(STR_LEN);
-    buffer.append(reinterpret_cast<const uint8_t*>(PROTO_STR), STR_LEN);
+    buffer.write(reinterpret_cast<const uint8_t*>(protocol::V1.data()), STR_LEN);
     buffer.write_64(0);
-    buffer.append(hex_str_to_byte_buff(info_hash).data(), 20);
-    buffer.append(reinterpret_cast<const uint8_t*>(peer_id.data()), 20);
+    buffer.write(hex_str_to_byte_buff(info_hash).data(), 20);
+    buffer.write(reinterpret_cast<const uint8_t*>(peer_id.data()), 20);
 }
 
 void msg_factory::keep_alive(byte_buffer& buffer)

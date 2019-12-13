@@ -36,7 +36,7 @@ endif()
 ########################################################################
 
 set(SRC
-    src/test_test.cpp
+    src/byte_buffer_test.cpp
 )
 
 add_executable(${PROJECT_NAME} ${SRC})

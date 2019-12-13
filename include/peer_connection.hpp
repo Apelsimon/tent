@@ -23,8 +23,8 @@ public:
         std::unique_ptr<peer_info> info, const std::string& local_peer_id);
     ~peer_connection();
 
-    void do_read() override;
-    void do_write() override;
+    void read() override;
+    void write() override;
     int fd() const override { return socket_.fd(); }
 
     void start() override;
@@ -32,11 +32,14 @@ public:
     void handshake() override;
 
 private:
+    void on_read(const byte_buffer& buffer);
+
     net_reactor& reactor_;
     std::unique_ptr<peer_info> peer_info_;
     tcp_socket socket_;
     session_sm sm_;
-    byte_buffer buffer_;
+    byte_buffer rcv_buffer_;
+    byte_buffer msg_buffer_;
 
     lt::torrent_info& torrent_info_;
 

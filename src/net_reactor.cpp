@@ -31,11 +31,11 @@ void net_reactor::start()
             {
                 if(events[i].events & EPOLLIN)
                 {
-                    it->second->do_read();
+                    it->second->read();
                 }
                 if(events[i].events & EPOLLOUT)
                 {
-                    it->second->do_write();
+                    it->second->write();
                 }
             }
         }

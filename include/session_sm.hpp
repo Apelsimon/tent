@@ -7,7 +7,8 @@ namespace tent
 enum class session_event
 {
     START,
-    CONNECTED
+    CONNECTED,
+    HANDSHAKE
 };
 
 class ism_client
@@ -24,12 +25,14 @@ class session_sm
 public:
     session_sm(ism_client& client);
     void on_event(session_event ev);
+    bool handshake_received();
 
 private:
     enum state
     {
         STARTED,
         CONNECTED,
+        HANDSHAKE_RECEIVED,
         IDLE
     };
 
