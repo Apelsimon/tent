@@ -21,6 +21,35 @@ void msg_factory::handshake(byte_buffer& buffer, const std::string& peer_id,
     buffer.append(reinterpret_cast<const uint8_t*>(peer_id.data()), 20);
 }
 
+void msg_factory::keep_alive(byte_buffer& buffer)
+{
+    buffer.write_32(0);
+}
+
+void msg_factory::choke(byte_buffer& buffer)
+{
+    buffer.write_32(1);
+    buffer.write_8(0);
+}
+
+void msg_factory::unchoke(byte_buffer& buffer)
+{
+    buffer.write_32(1);
+    buffer.write_8(1);
+}
+
+void msg_factory::interested(byte_buffer& buffer)
+{
+    buffer.write_32(1);
+    buffer.write_8(2);
+}
+
+void msg_factory::not_interested(byte_buffer& buffer)
+{
+    buffer.write_32(1);
+    buffer.write_8(3);
+}
+
 }
 
 static int char_to_int(char input)
