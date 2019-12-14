@@ -1,7 +1,5 @@
 #include "session_sm.hpp"
 
-#include "peer_connection.hpp"
-
 namespace tent
 {
 

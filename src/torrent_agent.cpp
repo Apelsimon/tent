@@ -1,4 +1,4 @@
-#include "peer_connection.hpp"
+#include "torrent_agent.hpp"
 
 #include "bittorrent_protocol.hpp"
 #include "msg_factory.hpp"
@@ -18,7 +18,7 @@ static bool msg_is_valid_handshake(const uint8_t* msg, size_t msg_len,
 namespace tent 
 {
 
-peer_connection::peer_connection(net_reactor& reactor, lt::torrent_info& torrent_info,
+torrent_agent::torrent_agent(net_reactor& reactor, lt::torrent_info& torrent_info,
     std::unique_ptr<peer_info> info, const std::string& local_peer_id) : 
     reactor_(reactor),
     peer_info_(std::move(info)),
@@ -35,12 +35,12 @@ peer_connection::peer_connection(net_reactor& reactor, lt::torrent_info& torrent
     reactor_.reg(*this, EPOLLIN | EPOLLOUT);
 }
 
-peer_connection::~peer_connection()
+torrent_agent::~torrent_agent()
 {
     reactor_.unreg(*this);
 }
 
-void peer_connection::read()
+void torrent_agent::read()
 {
     rcv_buffer_.reset();
     
@@ -65,7 +65,7 @@ void peer_connection::read()
     }
 }
 
-void peer_connection::write()
+void torrent_agent::write()
 {
     if(!connected_)
     {
@@ -82,12 +82,12 @@ void peer_connection::write()
     }    
 }
 
-void peer_connection::start()
+void torrent_agent::start()
 {
     sm_.on_event(session_event::START);
 }
 
-void peer_connection::connect()
+void torrent_agent::connect()
 {
     connected_ = socket_.connect(peer_info_->endpoint_);
     if(connected_)
@@ -96,7 +96,7 @@ void peer_connection::connect()
     }
 }
 
-void peer_connection::handshake() 
+void torrent_agent::handshake() 
 {
     rcv_buffer_.reset();
 
@@ -116,7 +116,7 @@ void peer_connection::handshake()
     } 
 }
 
-void peer_connection::on_read(const byte_buffer& buffer)
+void torrent_agent::on_read(const byte_buffer& buffer)
 {
     msg_buffer_.write(buffer.get_read(), buffer.read_available());
     const auto handshake_received = sm_.handshake_received();

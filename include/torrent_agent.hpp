@@ -16,12 +16,12 @@ namespace tent
 class net_reactor;
 class peer_info;
 
-class peer_connection : public inet_reactor_client, public ism_client 
+class torrent_agent : public inet_reactor_client, public ism_client 
 {
 public:
-    peer_connection(net_reactor& reactor, lt::torrent_info& torrent_info, 
+    torrent_agent(net_reactor& reactor, lt::torrent_info& torrent_info, 
         std::unique_ptr<peer_info> info, const std::string& local_peer_id);
-    ~peer_connection();
+    ~torrent_agent();
 
     void read() override;
     void write() override;

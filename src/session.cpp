@@ -1,7 +1,7 @@
 #include "session.hpp"
 
 #include "net_reactor.hpp"
-#include "peer_connection.hpp"
+#include "torrent_agent.hpp"
 #include "peer_info.hpp"
 #include "tracker_client.hpp"
 
@@ -32,9 +32,9 @@ void session::start()
 
     for(auto& peer : received_peers)
     {
-        auto connection = std::make_unique<peer_connection>(reactor_, torrent_info_, 
+        auto connection = std::make_unique<torrent_agent>(reactor_, torrent_info_, 
             std::move(peer), local_peer_id_);
-        connections_.push_back(std::move(connection));
+        agents_.push_back(std::move(connection));
     }
 }
 

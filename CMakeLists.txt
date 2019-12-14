@@ -18,7 +18,7 @@ set(SRC
     src/main.cpp
     src/msg_factory.cpp
     src/net_reactor.cpp
-    src/peer_connection.cpp
+    src/torrent_agent.cpp
     src/session.cpp
     src/session_sm.cpp
     src/tcp_socket.cpp
