@@ -24,7 +24,7 @@ torrent_agent::torrent_agent(net_reactor& reactor, lt::torrent_info& torrent_inf
     peer_info_(std::move(info)),
     socket_(endpoint{"0.0.0.0", 0}),
     sm_(*this),
-    rcv_buffer_(2048),
+    io_buffer_(2048),
     msg_buffer_(2048),
     torrent_info_(torrent_info),
     local_peer_id_(local_peer_id),
@@ -42,15 +42,15 @@ torrent_agent::~torrent_agent()
 
 void torrent_agent::read()
 {
-    rcv_buffer_.reset();
+    io_buffer_.reset();
     
     errno = 0;
-    while(connected_ && rcv_buffer_.write_available() > 0 && !errno)
+    while(connected_ && io_buffer_.write_available() > 0 && !errno)
     {
-        const auto res = socket_.read(rcv_buffer_);
+        const auto res = socket_.read(io_buffer_);
         if(res > 0)
         {
-            rcv_buffer_.inc_write(res);
+            io_buffer_.inc_write(res);
         }
         else if(res == 0)
         {
@@ -59,9 +59,9 @@ void torrent_agent::read()
         
     }
 
-    if(rcv_buffer_.read_available() > 0)
+    if(io_buffer_.read_available() > 0)
     {
-        on_read(rcv_buffer_);
+        on_read(io_buffer_);
     }
 }
 
@@ -98,37 +98,35 @@ void torrent_agent::connect()
 
 void torrent_agent::handshake() 
 {
-    rcv_buffer_.reset();
+    io_buffer_.reset();
 
     std::stringstream info_hash;
     info_hash << torrent_info_.info_hash();
-    
-    msg_factory::handshake(rcv_buffer_, local_peer_id_, info_hash.str());
+    msg_factory::handshake(io_buffer_, local_peer_id_, info_hash.str());
 
-    errno = 0;
-    while(rcv_buffer_.read_available() > 0 && !errno)
-    {
-        const auto res = socket_.write(rcv_buffer_);
-        if(res > 0)
-        {
-            rcv_buffer_.inc_read(res);
-        }
-    } 
+    send(); 
+}
+
+void torrent_agent::interested()
+{
+    io_buffer_.reset();
+    msg_factory::interested(io_buffer_);
+
+    send();
 }
 
 void torrent_agent::on_read(const byte_buffer& buffer)
 {
     msg_buffer_.write(buffer.get_read(), buffer.read_available());
-    const auto handshake_received = sm_.handshake_received();
     
     while(msg_buffer_.read_available() >= 4 && 
         msg_buffer_.read_available() >= get_msg_len(msg_buffer_, sm_.handshake_received()))
     {
+        const auto msg_len = get_msg_len(msg_buffer_, sm_.handshake_received());
+        const auto msg = msg_buffer_.read(msg_len);
+        
         if(!sm_.handshake_received())
         {
-            const auto msg_len = get_msg_len(msg_buffer_, sm_.handshake_received());
-            const auto msg = msg_buffer_.read(msg_len);
-
             // TODO: close connection if peer_id doesnt match
             if(msg_is_valid_handshake(msg, msg_len, peer_info_->id_))
             {
@@ -139,12 +137,26 @@ void torrent_agent::on_read(const byte_buffer& buffer)
         {
             // handle msg..
             std::cout << "Handle msg!" << std::endl;
+            
         }
     }
     
     if(msg_buffer_.read_available() == 0)
     {
         msg_buffer_.reset();
+    }
+}
+
+void torrent_agent::send()
+{
+    errno = 0;
+    while(io_buffer_.read_available() > 0 && !errno)
+    {
+        const auto res = socket_.write(io_buffer_);
+        if(res > 0)
+        {
+            io_buffer_.inc_read(res);
+        }
     }
 }
 
@@ -156,7 +168,6 @@ size_t get_msg_len(const tent::byte_buffer& buffer, bool handshake_received)
     {
         return buffer.peek_8() + 49;
     }
-
     return buffer.peek_32() + 4;
 }
 

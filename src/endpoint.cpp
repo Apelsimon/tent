@@ -22,4 +22,13 @@ endpoint::endpoint(const std::string& ip, uint16_t port)
     }
 }
 
+std::ostream& operator<<(std::ostream& os, const tent::endpoint& info) 
+{ 
+    char ip[INET_ADDRSTRLEN];
+    const auto addr = reinterpret_cast<const struct sockaddr_in*>(info.sockaddr());
+    inet_ntop(AF_INET, &addr->sin_addr, ip, INET_ADDRSTRLEN);
+
+    return os << '[' << ip << ':' << ntohs(addr->sin_port) << ']';
+}
+
 }

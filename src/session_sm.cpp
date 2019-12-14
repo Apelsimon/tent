@@ -29,6 +29,7 @@ void session_sm::on_event(session_event ev)
     case session_event::HANDSHAKE: 
     {
         state_ = HANDSHAKE_RECEIVED;
+        client_.interested();
         break;
     }
     default:

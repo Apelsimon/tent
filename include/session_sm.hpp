@@ -18,6 +18,7 @@ public:
     virtual void start() = 0;
     virtual void connect() = 0;
     virtual void handshake() = 0;
+    virtual void interested() = 0;
 };
 
 class session_sm

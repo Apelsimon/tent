@@ -60,10 +60,10 @@ TEST(byte_buffer_test, write_and_expand)
     constexpr size_t EXPECTED_SIZE = 2000;
 
     auto expected_data = gen_rnd_data(EXPECTED_SIZE);
-    byte_buffer bb{EXPECTED_SIZE / 2};
+    byte_buffer bb{EXPECTED_SIZE - 1};
     
     bb.write(expected_data.data(), EXPECTED_SIZE);
-    ASSERT_EQ(bb.size(), EXPECTED_SIZE);
+    ASSERT_EQ(bb.size(), 2 *EXPECTED_SIZE);
     ASSERT_EQ(bb.read_available(), EXPECTED_SIZE);
 
     std::vector<uint8_t> actual_data{bb.get_read(), bb.get_read() + EXPECTED_SIZE};
@@ -98,7 +98,9 @@ TEST(byte_buffer_test, peek_32)
     constexpr uint32_t Expected = 123;
     byte_buffer bb(10);
 
+    auto data = gen_rnd_data(100);
     bb.write_32(Expected);
+    bb.write(data.data(), data.size());
     ASSERT_EQ(bb.peek_32(), Expected);
 }
 

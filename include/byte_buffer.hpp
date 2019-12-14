@@ -34,7 +34,7 @@ public:
     static constexpr auto MAX_SIZE = std::numeric_limits<uint16_t>::max();
 
 private:
-    void expand();
+    void expand(size_t size);
     bool invariant() const;
 
     std::vector<uint8_t> buff_;

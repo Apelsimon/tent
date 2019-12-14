@@ -18,10 +18,11 @@ set(SRC
     src/main.cpp
     src/msg_factory.cpp
     src/net_reactor.cpp
-    src/torrent_agent.cpp
+    src/peer_info.cpp
     src/session.cpp
     src/session_sm.cpp
     src/tcp_socket.cpp
+    src/torrent_agent.cpp
     src/tracker_client.cpp    
 )
 

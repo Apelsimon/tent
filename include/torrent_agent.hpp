@@ -30,21 +30,24 @@ public:
     void start() override;
     void connect() override;
     void handshake() override;
+    void interested() override;
 
 private:
     void on_read(const byte_buffer& buffer);
+    void send();
 
     net_reactor& reactor_;
     std::unique_ptr<peer_info> peer_info_;
     tcp_socket socket_;
     session_sm sm_;
-    byte_buffer rcv_buffer_;
+    byte_buffer io_buffer_;
     byte_buffer msg_buffer_;
 
     lt::torrent_info& torrent_info_;
 
     const std::string& local_peer_id_;
     bool connected_;
+    bool handshake_received_;
 };
 
 }

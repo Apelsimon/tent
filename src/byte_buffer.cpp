@@ -1,5 +1,7 @@
 #include "byte_buffer.hpp"
 
+#include <algorithm>
+#include <arpa/inet.h>
 #include <stdexcept>
 #include <iostream>
 
@@ -83,7 +85,7 @@ void byte_buffer::write(const uint8_t* data, size_t size)
     
     if(write_ > buff_.size())
     {
-        expand();
+        expand(write_);
     }
 
     std::copy(data, data + size, buff_.data() + (write_ - size));
@@ -96,6 +98,7 @@ void byte_buffer::write_8(uint8_t data)
 
 void byte_buffer::write_32(uint32_t data)
 {
+    data = htonl(data);
     write(reinterpret_cast<uint8_t*>(&data), 4);
 }
 
@@ -138,10 +141,10 @@ uint8_t byte_buffer::peek_8() const
 uint32_t byte_buffer::peek_32() const
 {
     uint32_t res;
-    auto read = get_read();
-    std::copy(read, read + sizeof(res), reinterpret_cast<uint8_t*>(&res));
+    const auto read = get_read();
+    std::copy(read, read + 4, reinterpret_cast<uint8_t*>(&res));
 
-    return res;
+    return ntohl(res);
 }
 
 bool byte_buffer::invariant() const
@@ -149,10 +152,9 @@ bool byte_buffer::invariant() const
     return read_ <= write_ && read_ <= buff_.size() && write_ <= buff_.size() && buff_.size() <= MAX_SIZE;
 }
 
-void byte_buffer::expand()
+void byte_buffer::expand(size_t size)
 {
-    buff_.resize(2 * buff_.size());
-    
+    buff_.resize(2 * size);
     if(!invariant())
     {
         throw std::length_error{"Buffer exceeded max limit"};

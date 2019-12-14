@@ -3,6 +3,7 @@
 
 #include "endpoint.hpp"
 
+#include <ostream>
 #include <string>
 
 namespace tent
@@ -19,6 +20,8 @@ public:
     std::string id_;
     endpoint endpoint_;
 };
+
+std::ostream &operator<<(std::ostream& os, const peer_info& info);
 
 }
 
