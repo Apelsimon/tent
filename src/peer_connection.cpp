@@ -11,8 +11,9 @@
 #include <sstream>
 #include <cstring>
 
-static bool get_msg_len(const tent::byte_buffer& buffer, bool handshake_received);
-static bool msg_is_handshake(const uint8_t* msg, size_t msg_len);
+static size_t get_msg_len(const tent::byte_buffer& buffer, bool handshake_received);
+static bool msg_is_valid_handshake(const uint8_t* msg, size_t msg_len, 
+    const std::string& expected_peer_id);
 
 namespace tent 
 {
@@ -123,16 +124,21 @@ void peer_connection::on_read(const byte_buffer& buffer)
     while(msg_buffer_.read_available() >= 4 && 
         msg_buffer_.read_available() >= get_msg_len(msg_buffer_, sm_.handshake_received()))
     {
-        const auto msg_len = get_msg_len(msg_buffer_, sm_.handshake_received());
-        const auto msg = msg_buffer_.read(msg_len);
-
-        if(!sm_.handshake_received() && msg_is_handshake(msg, msg_len))
+        if(!sm_.handshake_received())
         {
-            sm_.on_event(session_event::HANDSHAKE);
+            const auto msg_len = get_msg_len(msg_buffer_, sm_.handshake_received());
+            const auto msg = msg_buffer_.read(msg_len);
+
+            // TODO: close connection if peer_id doesnt match
+            if(msg_is_valid_handshake(msg, msg_len, peer_info_->id_))
+            {
+                sm_.on_event(session_event::HANDSHAKE);
+            }
         }
         else
         {
             // handle msg..
+            std::cout << "Handle msg!" << std::endl;
         }
     }
     
@@ -144,7 +150,7 @@ void peer_connection::on_read(const byte_buffer& buffer)
 
 } // namespace tent
 
-bool get_msg_len(const tent::byte_buffer& buffer, bool handshake_received)
+size_t get_msg_len(const tent::byte_buffer& buffer, bool handshake_received)
 {
     if(!handshake_received)
     {
@@ -154,10 +160,11 @@ bool get_msg_len(const tent::byte_buffer& buffer, bool handshake_received)
     return buffer.peek_32() + 4;
 }
 
-bool msg_is_handshake(const uint8_t* msg, size_t msg_len)
+bool msg_is_valid_handshake(const uint8_t* msg, size_t msg_len, const std::string& expected_peer_id)
 {
     const auto proto_str_len = *msg;
     const auto proto_str = std::string{reinterpret_cast<const char*>(msg + 1), proto_str_len};
+    const auto peer_id = std::string{reinterpret_cast<const char*>(msg + 48), 20};
     
-    return msg_len == proto_str_len + 49 && proto_str == tent::protocol::V1;
+    return msg_len == (proto_str_len + 49) && proto_str == tent::protocol::V1 && peer_id == expected_peer_id;
 }

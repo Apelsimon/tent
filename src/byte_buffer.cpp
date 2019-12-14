@@ -7,7 +7,7 @@ namespace tent
 {
 
 byte_buffer::byte_buffer(size_t size) : 
-    buff_(size),
+    buff_(size, 0),
     read_(0),
     write_(0)
 {
@@ -139,7 +139,7 @@ uint32_t byte_buffer::peek_32() const
 {
     uint32_t res;
     auto read = get_read();
-    std::copy(read, read + 4, &res);
+    std::copy(read, read + sizeof(res), reinterpret_cast<uint8_t*>(&res));
 
     return res;
 }

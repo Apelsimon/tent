@@ -93,6 +93,15 @@ TEST(byte_buffer_test, size)
     ASSERT_EQ(bb.size(), EXPECTED_SIZE);
 }
 
+TEST(byte_buffer_test, peek_32)
+{
+    constexpr uint32_t Expected = 123;
+    byte_buffer bb(10);
+
+    bb.write_32(Expected);
+    ASSERT_EQ(bb.peek_32(), Expected);
+}
+
 std::vector<uint8_t> gen_rnd_data(size_t size)
 {
     using random_bytes_engine = std::independent_bits_engine<
