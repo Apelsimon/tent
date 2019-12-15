@@ -16,6 +16,8 @@ public:
     session(net_reactor& reactor, const lt::torrent_info& info);
     ~session();
 
+    const std::string& peer_id() const { return local_peer_id_; }
+
 private:
     void start();
 

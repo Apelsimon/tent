@@ -5,6 +5,7 @@
 #include "msg_factory.hpp"
 #include "net_reactor.hpp"
 #include "peer_info.hpp"
+#include "session.hpp"
 
 #include <sys/epoll.h>
 
@@ -19,8 +20,8 @@ static bool msg_is_valid_handshake(const uint8_t* msg, size_t msg_len,
 namespace tent 
 {
 
-torrent_agent::torrent_agent(net_reactor& reactor, lt::torrent_info& torrent_info,
-    std::unique_ptr<peer_info> info, const std::string& local_peer_id) : 
+torrent_agent::torrent_agent(session& session, net_reactor& reactor, lt::torrent_info& torrent_info, std::unique_ptr<peer_info> info) :
+    session_(session),
     reactor_(reactor),
     peer_info_(std::move(info)),
     socket_(endpoint{"0.0.0.0", 0}),
@@ -28,7 +29,6 @@ torrent_agent::torrent_agent(net_reactor& reactor, lt::torrent_info& torrent_inf
     io_buffer_(2048),
     msg_buffer_(2048),
     torrent_info_(torrent_info),
-    local_peer_id_(local_peer_id),
     connected_(false),
     choked_(true)
 {
@@ -104,7 +104,7 @@ void torrent_agent::handshake()
 
     std::stringstream info_hash;
     info_hash << torrent_info_.info_hash();
-    msg_factory::handshake(io_buffer_, local_peer_id_, info_hash.str());
+    msg_factory::handshake(io_buffer_, session_.peer_id(), info_hash.str());
 
     send(); 
 }
@@ -223,7 +223,7 @@ void torrent_agent::handle_msg(const message& msg)
         std::cout << "PORT" << std::endl;
         break;
     default:
-        std::cerr << "Unknow message id" << std::endl;
+        std::cerr << "Unknow message id" << std::endl;  
         break;
     }
 }

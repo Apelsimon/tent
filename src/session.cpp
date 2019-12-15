@@ -33,8 +33,8 @@ void session::start()
 
     for(auto& peer : received_peers)
     {
-        auto connection = std::make_unique<torrent_agent>(reactor_, torrent_info_, 
-            std::move(peer), local_peer_id_);
+        auto connection = std::make_unique<torrent_agent>(*this, reactor_, 
+            torrent_info_, std::move(peer));
         agents_.push_back(std::move(connection));
     }
 }
