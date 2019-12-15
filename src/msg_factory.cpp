@@ -50,7 +50,7 @@ void msg_factory::not_interested(byte_buffer& buffer)
     buffer.write_8(3);
 }
 
-}
+} // namespace tent
 
 static int char_to_int(char input)
 {

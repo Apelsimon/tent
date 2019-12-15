@@ -1,6 +1,7 @@
 #include "torrent_agent.hpp"
 
 #include "bittorrent_protocol.hpp"
+#include "message.hpp"
 #include "msg_factory.hpp"
 #include "net_reactor.hpp"
 #include "peer_info.hpp"
@@ -28,7 +29,8 @@ torrent_agent::torrent_agent(net_reactor& reactor, lt::torrent_info& torrent_inf
     msg_buffer_(2048),
     torrent_info_(torrent_info),
     local_peer_id_(local_peer_id),
-    connected_(false)
+    connected_(false),
+    choked_(true)
 {
     socket_.bind();
 
@@ -115,6 +117,17 @@ void torrent_agent::interested()
     send();
 }
 
+void torrent_agent::choked()
+{
+    choked_ = true;
+}
+
+void torrent_agent::unchoked() 
+{
+    choked_ = false;
+    // request_piece();
+}
+
 void torrent_agent::on_read(const byte_buffer& buffer)
 {
     msg_buffer_.write(buffer.get_read(), buffer.read_available());
@@ -123,10 +136,10 @@ void torrent_agent::on_read(const byte_buffer& buffer)
         msg_buffer_.read_available() >= get_msg_len(msg_buffer_, sm_.handshake_received()))
     {
         const auto msg_len = get_msg_len(msg_buffer_, sm_.handshake_received());
-        const auto msg = msg_buffer_.read(msg_len);
         
         if(!sm_.handshake_received())
         {
+            const auto msg = msg_buffer_.read(msg_len);
             // TODO: close connection if peer_id doesnt match
             if(msg_is_valid_handshake(msg, msg_len, peer_info_->id_))
             {
@@ -135,9 +148,10 @@ void torrent_agent::on_read(const byte_buffer& buffer)
         }
         else
         {
-            // handle msg..
-            std::cout << "Handle msg!" << std::endl;
-            
+            const auto msg = message(msg_buffer_);
+            msg_buffer_.inc_read(msg_len);
+
+            handle_msg(msg);
         }
     }
     
@@ -157,6 +171,60 @@ void torrent_agent::send()
         {
             io_buffer_.inc_read(res);
         }
+    }
+}
+
+void torrent_agent::handle_msg(const message& msg)
+{
+    switch (msg.id_)
+    {
+    case message::id::KEEP_ALIVE:
+        // TODO
+        std::cout << "KEEP_ALIVE" << std::endl;
+        break;
+    case message::id::CHOKE:
+        sm_.on_event(session_event::CHOKE);
+        std::cout << "CHOKE" << std::endl;
+        break;
+    case message::id::UNCHOKE:
+        std::cout << "UNCHOKE" << std::endl;
+        sm_.on_event(session_event::UNCHOKE);        
+        break;
+    case message::id::INTERESTED:
+        // TODO
+        std::cout << "INTERESTED" << std::endl;
+        break;
+    case message::id::NOT_INTERESTED:
+        // TODO
+        std::cout << "NOT_INTERESTED" << std::endl;
+        break;
+    case message::id::HAVE:
+        // TODO
+        std::cout << "HAVE" << std::endl;
+        break;
+    case message::id::BITFIELD:
+        // TODO
+        std::cout << "BITFIELD" << std::endl;
+        break;
+    case message::id::REQUEST:
+        // TODO
+        std::cout << "REQUEST" << std::endl;
+        break;
+    case message::id::PIECE:
+        // TODO
+        std::cout << "PIECE" << std::endl;
+        break;
+    case message::id::CANCEL:
+        // TODO
+        std::cout << "CANCEL" << std::endl;
+        break;
+    case message::id::PORT:
+        // TODO
+        std::cout << "PORT" << std::endl;
+        break;
+    default:
+        std::cerr << "Unknow message id" << std::endl;
+        break;
     }
 }
 

@@ -13,6 +13,7 @@
 namespace tent 
 {
 
+class message;
 class net_reactor;
 class peer_info;
 
@@ -31,10 +32,13 @@ public:
     void connect() override;
     void handshake() override;
     void interested() override;
+    void choked() override;
+    void unchoked() override;
 
 private:
     void on_read(const byte_buffer& buffer);
     void send();
+    void handle_msg(const message& msg);
 
     net_reactor& reactor_;
     std::unique_ptr<peer_info> peer_info_;
@@ -47,7 +51,7 @@ private:
 
     const std::string& local_peer_id_;
     bool connected_;
-    bool handshake_received_;
+    bool choked_;
 };
 
 }

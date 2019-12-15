@@ -27,15 +27,17 @@ public:
     uint8_t* read(size_t size);
     uint8_t read_8();
     uint32_t read_32();
-    uint8_t peek_8() const;
-    uint32_t peek_32() const;
+    uint8_t peek_8(size_t offset = 0) const;
+    uint32_t peek_32(size_t offset = 0) const;
     size_t size() const { return buff_.size(); }
+    byte_buffer slice(size_t begin, size_t end) const;
 
     static constexpr auto MAX_SIZE = std::numeric_limits<uint16_t>::max();
 
 private:
     void expand(size_t size);
     bool invariant() const;
+    const uint8_t* data() const { return buff_.data(); }
 
     std::vector<uint8_t> buff_;
     size_t read_;

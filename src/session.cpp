@@ -27,6 +27,7 @@ void session::start()
     std::vector<std::unique_ptr<peer_info>> received_peers;
     if(!tracker_client_->announce(PORT, local_peer_id_, received_peers))
     {
+        std::cerr << "Failed to announce to tracker" << std::endl;
         return;
     }
 

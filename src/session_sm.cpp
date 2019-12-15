@@ -32,6 +32,18 @@ void session_sm::on_event(session_event ev)
         client_.interested();
         break;
     }
+    case session_event::CHOKE: 
+    {
+        state_ = CHOKED;
+        client_.choked();
+        break;
+    }
+    case session_event::UNCHOKE: 
+    {
+        state_ = UNCHOKED;
+        client_.unchoked();
+        break;
+    }
     default:
         break;
     }

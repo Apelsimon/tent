@@ -133,18 +133,27 @@ uint32_t byte_buffer::read_32()
     return res;
 }
 
-uint8_t byte_buffer::peek_8() const
+uint8_t byte_buffer::peek_8(size_t offset) const
 {
-    return *get_read();
+    return *(get_read() + offset);
 }
 
-uint32_t byte_buffer::peek_32() const
+uint32_t byte_buffer::peek_32(size_t offset) const
 {
     uint32_t res;
-    const auto read = get_read();
+    const auto read = get_read() + offset;
     std::copy(read, read + 4, reinterpret_cast<uint8_t*>(&res));
 
     return ntohl(res);
+}
+
+byte_buffer byte_buffer::slice(size_t begin, size_t end) const
+{
+    const auto size = end - begin;
+    byte_buffer bb{size};
+    bb.write(data() + begin, size);
+
+    return bb;
 }
 
 bool byte_buffer::invariant() const

@@ -8,7 +8,9 @@ enum class session_event
 {
     START,
     CONNECTED,
-    HANDSHAKE
+    HANDSHAKE,
+    CHOKE,
+    UNCHOKE
 };
 
 class ism_client
@@ -19,6 +21,8 @@ public:
     virtual void connect() = 0;
     virtual void handshake() = 0;
     virtual void interested() = 0;
+    virtual void choked() = 0;
+    virtual void unchoked() = 0;
 };
 
 class session_sm
@@ -34,6 +38,8 @@ private:
         STARTED,
         CONNECTED,
         HANDSHAKE_RECEIVED,
+        CHOKED,
+        UNCHOKED,
         IDLE
     };
 
