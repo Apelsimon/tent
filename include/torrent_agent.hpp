@@ -16,13 +16,14 @@ namespace tent
 class message;
 class net_reactor;
 class peer_info;
+class piece_handler;
 class session;
 
 class torrent_agent : public inet_reactor_client, public ism_client 
 {
 public:
     torrent_agent(session& session, net_reactor& reactor, lt::torrent_info& torrent_info, 
-        std::unique_ptr<peer_info> info);
+        std::unique_ptr<peer_info> info, piece_handler& handler);
     ~torrent_agent();
 
     void read() override;
@@ -39,7 +40,7 @@ public:
 private:
     void on_read(const byte_buffer& buffer);
     void send();
-    void handle_msg(const message& msg);
+    void handle_msg(message& msg);
 
     session& session_;
     net_reactor& reactor_;
@@ -48,6 +49,7 @@ private:
     session_sm sm_;
     byte_buffer io_buffer_;
     byte_buffer msg_buffer_;
+    piece_handler& piece_handler_;
 
     lt::torrent_info& torrent_info_;
 

@@ -5,6 +5,7 @@
 #include "msg_factory.hpp"
 #include "net_reactor.hpp"
 #include "peer_info.hpp"
+#include "piece_handler.hpp"
 #include "session.hpp"
 
 #include <sys/epoll.h>
@@ -20,7 +21,9 @@ static bool msg_is_valid_handshake(const uint8_t* msg, size_t msg_len,
 namespace tent 
 {
 
-torrent_agent::torrent_agent(session& session, net_reactor& reactor, lt::torrent_info& torrent_info, std::unique_ptr<peer_info> info) :
+torrent_agent::torrent_agent(session& session, net_reactor& reactor, 
+    lt::torrent_info& torrent_info, std::unique_ptr<peer_info> info,
+    piece_handler& handler) :
     session_(session),
     reactor_(reactor),
     peer_info_(std::move(info)),
@@ -28,6 +31,7 @@ torrent_agent::torrent_agent(session& session, net_reactor& reactor, lt::torrent
     sm_(*this),
     io_buffer_(2048),
     msg_buffer_(2048),
+    piece_handler_(handler),
     torrent_info_(torrent_info),
     connected_(false),
     choked_(true)
@@ -148,7 +152,7 @@ void torrent_agent::on_read(const byte_buffer& buffer)
         }
         else
         {
-            const auto msg = message(msg_buffer_);
+            auto msg = message(msg_buffer_);
             msg_buffer_.inc_read(msg_len);
 
             handle_msg(msg);
@@ -174,7 +178,7 @@ void torrent_agent::send()
     }
 }
 
-void torrent_agent::handle_msg(const message& msg)
+void torrent_agent::handle_msg(message& msg)
 {
     switch (msg.id_)
     {
@@ -205,6 +209,7 @@ void torrent_agent::handle_msg(const message& msg)
     case message::id::BITFIELD:
         // TODO
         std::cout << "BITFIELD" << std::endl;
+        piece_handler_.have(msg.payload_);
         break;
     case message::id::REQUEST:
         // TODO

@@ -19,6 +19,7 @@ set(SRC
     src/msg_factory.cpp
     src/net_reactor.cpp
     src/peer_info.cpp
+    src/piece_handler.cpp
     src/session.cpp
     src/session_sm.cpp
     src/tcp_socket.cpp
