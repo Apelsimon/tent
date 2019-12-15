@@ -72,16 +72,19 @@ TEST(byte_buffer_test, write_and_expand)
 
 TEST(byte_buffer_test, exceed_write_limit)
 {
-    {
-        auto data = gen_rnd_data(byte_buffer::MAX_SIZE + 1);
-        byte_buffer bb{0};
+    uint64_t MAX = byte_buffer::MAX_SIZE;
+    
+    { 
+        std::vector<uint8_t> data(MAX + 1, 0);
+
+        byte_buffer bb{0};        
         ASSERT_THROW(bb.write(data.data(), data.size()), std::length_error);
     }
     
     // ctor
     {
-        ASSERT_NO_THROW(byte_buffer{byte_buffer::MAX_SIZE});
-        ASSERT_THROW(byte_buffer{byte_buffer::MAX_SIZE + 1}, std::length_error);
+        ASSERT_NO_THROW(byte_buffer{MAX});
+        ASSERT_THROW(byte_buffer{MAX + 1}, std::length_error);
     }
 }
 
@@ -110,8 +113,9 @@ std::vector<uint8_t> gen_rnd_data(size_t size)
         std::default_random_engine, CHAR_BIT, unsigned char>;
 
     std::vector<uint8_t> data(size);
+
     random_bytes_engine rbe;
     std::generate(std::begin(data), std::end(data), std::ref(rbe));
-
+    
     return data;
 }

@@ -10,7 +10,8 @@ enum class session_event
     CONNECTED,
     HANDSHAKE,
     CHOKE,
-    UNCHOKE
+    UNCHOKE,
+    DISCONNECTED
 };
 
 class ism_client
@@ -23,6 +24,7 @@ public:
     virtual void interested() = 0;
     virtual void choked() = 0;
     virtual void unchoked() = 0;
+    virtual void disconnected() = 0;
 };
 
 class session_sm
@@ -35,12 +37,13 @@ public:
 private:
     enum state
     {
+        IDLE,
         STARTED,
         CONNECTED,
         HANDSHAKE_RECEIVED,
         CHOKED,
         UNCHOKED,
-        IDLE
+        DISCONNECTED
     };
 
     ism_client& client_;

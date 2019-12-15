@@ -1,5 +1,7 @@
 #include "session_sm.hpp"
 
+#include <iostream>
+
 namespace tent
 {
 
@@ -12,6 +14,11 @@ session_sm::session_sm(ism_client& client) :
 
 void session_sm::on_event(session_event ev)
 {
+    if(state_ == DISCONNECTED)
+    {
+        return;
+    }
+
     switch (ev)
     {
     case session_event::START:
@@ -43,6 +50,12 @@ void session_sm::on_event(session_event ev)
         state_ = UNCHOKED;
         client_.unchoked();
         break;
+    }
+    case session_event::DISCONNECTED:
+    {
+        // TODO: reconnect to peer
+        state_ = DISCONNECTED;
+        client_.disconnected();
     }
     default:
         break;

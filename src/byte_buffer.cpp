@@ -8,6 +8,13 @@
 namespace tent
 {
 
+byte_buffer::byte_buffer() : 
+    buff_(),
+    read_(0),
+    write_(0)
+{
+}
+
 byte_buffer::byte_buffer(size_t size) : 
     buff_(size, 0),
     read_(0),
@@ -82,12 +89,10 @@ size_t byte_buffer::write_available() const
 void byte_buffer::write(const uint8_t* data, size_t size)
 {
     write_ += size;
-    
     if(write_ > buff_.size())
     {
         expand(write_);
     }
-
     std::copy(data, data + size, buff_.data() + (write_ - size));
 }
 
@@ -150,6 +155,11 @@ uint32_t byte_buffer::peek_32(size_t offset) const
 byte_buffer byte_buffer::slice(size_t begin, size_t end) const
 {
     const auto size = end - begin;
+    if(size <= 0)
+    {
+        return {};
+    }
+
     byte_buffer bb{size};
     bb.write(data() + begin, size);
 
@@ -163,11 +173,13 @@ bool byte_buffer::invariant() const
 
 void byte_buffer::expand(size_t size)
 {
-    buff_.resize(2 * size);
-    if(!invariant())
+    const auto new_size = 2 * size;
+    if(new_size > MAX_SIZE)
     {
         throw std::length_error{"Buffer exceeded max limit"};
     }
+
+    buff_.resize(2 * size);
 }
 
 

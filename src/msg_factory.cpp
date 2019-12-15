@@ -2,7 +2,9 @@
 
 #include "bittorrent_protocol.hpp"
 #include "byte_buffer.hpp"
+#include "message.hpp"
 #include "peer_info.hpp"
+#include "pieces.hpp"
 
 static std::vector<std::uint8_t> hex_str_to_byte_buff(const std::string& hex);
 
@@ -29,25 +31,34 @@ void msg_factory::keep_alive(byte_buffer& buffer)
 void msg_factory::choke(byte_buffer& buffer)
 {
     buffer.write_32(1);
-    buffer.write_8(0);
+    buffer.write_8(message::id::CHOKE);
 }
 
 void msg_factory::unchoke(byte_buffer& buffer)
 {
     buffer.write_32(1);
-    buffer.write_8(1);
+    buffer.write_8(message::id::UNCHOKE);
 }
 
 void msg_factory::interested(byte_buffer& buffer)
 {
     buffer.write_32(1);
-    buffer.write_8(2);
+    buffer.write_8(message::id::INTERESTED);
 }
 
 void msg_factory::not_interested(byte_buffer& buffer)
 {
     buffer.write_32(1);
-    buffer.write_8(3);
+    buffer.write_8(message::id::NOT_INTERESTED);
+}
+
+void msg_factory::request(byte_buffer& buffer, const piece_request& req)
+{
+    buffer.write_32(13);
+    buffer.write_8(message::id::REQUEST);
+    buffer.write_32(req.index_);
+    buffer.write_32(req.begin_);
+    buffer.write_32(req.length_);
 }
 
 } // namespace tent

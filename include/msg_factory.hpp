@@ -7,6 +7,7 @@ namespace tent
 {
 
 class byte_buffer;
+class piece_request;
 
 class msg_factory
 {
@@ -18,6 +19,7 @@ public:
     static void unchoke(byte_buffer& buffer);
     static void interested(byte_buffer& buffer);
     static void not_interested(byte_buffer& buffer);
+    static void request(byte_buffer& buffer, const piece_request& req);
 };
 
 }

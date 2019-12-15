@@ -36,11 +36,13 @@ public:
     void interested() override;
     void choked() override;
     void unchoked() override;
-
+    void disconnected() override;
+    
 private:
     void on_read(const byte_buffer& buffer);
     void send();
     void handle_msg(message& msg);
+    void request_piece();
 
     session& session_;
     net_reactor& reactor_;

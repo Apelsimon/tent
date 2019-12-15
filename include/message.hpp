@@ -3,6 +3,8 @@
 
 #include "byte_buffer.hpp"
 
+#include <iostream>
+
 namespace tent
 {
 
@@ -10,7 +12,7 @@ class message
 {
 public:
 
-    enum class id 
+    enum id 
     {
         KEEP_ALIVE = -1,
         CHOKE = 0,
@@ -26,10 +28,12 @@ public:
     };
 
     message(const byte_buffer& buffer) :
-        id_(buffer.peek_32() == 0 ? id::KEEP_ALIVE : 
+        id_(buffer.peek_32() == 0 ? KEEP_ALIVE : 
             static_cast<id>(buffer.peek_8(4))),
-        payload_(buffer.slice(5,  5 + buffer.peek_32() - 1))
-    {}
+        payload_(buffer.peek_32() == 0 ? byte_buffer{} : 
+            buffer.slice(5,  5 + buffer.peek_32() - 1))
+    {
+    }
 
     id id_;
     byte_buffer payload_;

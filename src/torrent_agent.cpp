@@ -60,9 +60,9 @@ void torrent_agent::read()
         }
         else if(res == 0)
         {
-            connected_ = false;
-        }
-        
+            std::cout << "Disconnected with " << *peer_info_ << std::endl;
+            sm_.on_event(session_event::DISCONNECTED);
+        }        
     }
 
     if(io_buffer_.read_available() > 0)
@@ -85,7 +85,7 @@ void torrent_agent::write()
                 sm_.on_event(session_event::CONNECTED);
             }
         }
-    }    
+    }        
 }
 
 void torrent_agent::start()
@@ -129,7 +129,13 @@ void torrent_agent::choked()
 void torrent_agent::unchoked() 
 {
     choked_ = false;
-    // request_piece();
+    request_piece();
+}
+
+void torrent_agent::disconnected()
+{
+    connected_ = false;
+    socket_.close();
 }
 
 void torrent_agent::on_read(const byte_buffer& buffer)
@@ -184,52 +190,62 @@ void torrent_agent::handle_msg(message& msg)
     {
     case message::id::KEEP_ALIVE:
         // TODO
-        std::cout << "KEEP_ALIVE" << std::endl;
         break;
     case message::id::CHOKE:
         sm_.on_event(session_event::CHOKE);
-        std::cout << "CHOKE" << std::endl;
         break;
     case message::id::UNCHOKE:
-        std::cout << "UNCHOKE" << std::endl;
         sm_.on_event(session_event::UNCHOKE);        
         break;
     case message::id::INTERESTED:
         // TODO
-        std::cout << "INTERESTED" << std::endl;
         break;
     case message::id::NOT_INTERESTED:
         // TODO
-        std::cout << "NOT_INTERESTED" << std::endl;
         break;
     case message::id::HAVE:
         // TODO
-        std::cout << "HAVE" << std::endl;
         break;
     case message::id::BITFIELD:
-        // TODO
-        std::cout << "BITFIELD" << std::endl;
         piece_handler_.have(msg.payload_);
         break;
     case message::id::REQUEST:
         // TODO
-        std::cout << "REQUEST" << std::endl;
         break;
     case message::id::PIECE:
-        // TODO
-        std::cout << "PIECE" << std::endl;
+        request_piece();
         break;
     case message::id::CANCEL:
         // TODO
-        std::cout << "CANCEL" << std::endl;
         break;
     case message::id::PORT:
         // TODO
-        std::cout << "PORT" << std::endl;
         break;
     default:
         std::cerr << "Unknow message id" << std::endl;  
         break;
+    }
+}
+
+void torrent_agent::request_piece()
+{
+    if(!choked_)
+    {
+        constexpr auto MAX_BURST = 100;
+
+        auto result = piece_handler_.get_piece_request();
+        auto send_count = 0;
+
+        while(result.first && send_count < MAX_BURST)
+        {
+            io_buffer_.reset();
+            msg_factory::request(io_buffer_, result.second);
+
+            send();
+            ++send_count;
+
+            result = piece_handler_.get_piece_request();
+        }
     }
 }
 

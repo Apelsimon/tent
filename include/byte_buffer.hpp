@@ -11,6 +11,7 @@ namespace tent
 class byte_buffer
 {
 public:
+    byte_buffer();
     byte_buffer(size_t size);
 
     const uint8_t* get_read() const;
@@ -19,7 +20,7 @@ public:
     void inc_write(size_t inc);
     size_t read_available() const;
     size_t write_available() const;
-    void reset() { read_ = write_ = 0; }
+    void reset() { read_ = 0; write_ = 0; }
     void write(const uint8_t* data, size_t size);
     void write_8(uint8_t data);
     void write_32(uint32_t data);
@@ -32,7 +33,7 @@ public:
     size_t size() const { return buff_.size(); }
     byte_buffer slice(size_t begin, size_t end) const;
 
-    static constexpr auto MAX_SIZE = std::numeric_limits<uint16_t>::max();
+    static constexpr auto MAX_SIZE = std::numeric_limits<uint32_t>::max();
 
 private:
     void expand(size_t size);

@@ -1,25 +1,14 @@
 #ifndef PIECE_HANDLER_HPP_
 #define PIECE_HANDLER_HPP_
 
+#include "pieces.hpp"
+
 #include "libtorrent/torrent_info.hpp"
 
-#include <cstdint>
-#include <set>
+#include <queue>
 
 namespace tent
 {
-
-class byte_buffer;
-
-using piece_index = uint32_t;
-
-class piece
-{
-public:
-    piece_index index_;
-    uint32_t begin_;
-    uint32_t length_;
-};
 
 class piece_handler
 {
@@ -28,12 +17,18 @@ public:
 
     void have(uint32_t index);
     void have(byte_buffer& bitfield);
-    piece get_piece();
+    void received(byte_buffer& piece);
+    std::pair<bool, piece_request> get_piece_request();
 
 private:
+    void add_to_queue(uint32_t index);
+    void rebuild_queue();
+
     const lt::torrent_info& torrent_info_;
 
-    std::set<piece_index> have_set_;
+    std::unordered_set<piece_index> have_set_;
+    std::queue<piece_request> request_queue_;
+    received_piece_map received_pieces_;
 };
 
 }
