@@ -5,6 +5,7 @@
 
 #include <cstdint>
 #include <unordered_set>
+#include <unordered_map>
 
 namespace tent
 {
@@ -25,32 +26,37 @@ public:
     uint32_t length_;
 };
 
-class piece_received
+class piece_received_key
 {
 public:
     uint32_t index_;
     uint32_t begin_;
-    byte_buffer block_;
 
-    bool operator==(const piece_received& other) const 
+    bool operator==(const piece_received_key& other) const 
     {
         return index_ == other.index_ && begin_ == other.begin_;
     }
 };
 
-class piece_received_hash
+using received_pieces_map = std::unordered_map<piece_received_key, byte_buffer>;
+
+}
+
+namespace std 
 {
-public:
-    size_t operator()(const piece_received& piece) const
+
+  template <>
+  struct hash<tent::piece_received_key>
+  {
+    size_t operator()(const tent::piece_received_key& key) const
     {
-        auto h1 = std::hash<uint32_t>{}(piece.index_);
-        auto h2 = std::hash<uint32_t>{}(piece.begin_);
+        // TODO: use boost::hash_combine  
+        const auto h1 = std::hash<uint32_t>{}(key.index_);
+        const auto h2 = std::hash<uint32_t>{}(key.begin_);
 
-        return h1 ^ (h2 << 1); // TODO: use boost::hash_combine
+        return h1 ^ (h2 << 1);
     }
-};
-
-using received_piece_map = std::unordered_set<piece_received, piece_received_hash>;
+  };
 
 }
 

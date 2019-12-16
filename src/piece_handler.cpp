@@ -40,10 +40,11 @@ void piece_handler::have(byte_buffer& bitfield)
 
 void piece_handler::received(byte_buffer& piece)
 {
-    piece_received pr{piece.read_32(), piece.read_32(), piece};
-    if(received_pieces_.find(pr) == received_pieces_.end())
+    piece_received_key key{piece.read_32(), piece.read_32()};
+
+    if(received_pieces_.find(key) == received_pieces_.end())
     {
-        received_pieces_.insert(pr);
+        received_pieces_[key] = piece;
     }
 }
 
@@ -51,9 +52,15 @@ std::pair<bool, piece_request> piece_handler::get_piece_request()
 {
     if(request_queue_.empty())
     {
-        rebuild_queue(); // TODO
-        std::cout << "REBUILD QUEUE!" << std::endl;
-        return {false, piece_request{0, 0, 0}};
+        if(rebuild_queue())
+        {
+            std::cout << "SUCCESSFULLY REBUILT QUEUE!" << std::endl;
+        }
+        else
+        {
+            std::cout << "NOTHING MORE TO REBUILD!" << std::endl;
+            return {false, piece_request{0, 0, 0}};
+        }
     }
 
     auto piece = request_queue_.front();
@@ -69,18 +76,27 @@ void piece_handler::add_to_queue(uint32_t index)
     const auto piece_size = torrent_info_.piece_size(index);
     const auto blocks_per_piece = std::ceil(piece_size / static_cast<double>(BLOCK_LEN));
 
-    for(auto block_ind = 0; block_ind < blocks_per_piece; ++block_ind)
+    for(uint32_t block_ind = 0; block_ind < blocks_per_piece; ++block_ind)
     {
-        const auto block_len = block_ind < (blocks_per_piece - 1) ? 
-            BLOCK_LEN : piece_size % BLOCK_LEN;
+        piece_received_key key{index, block_ind};
+        if(received_pieces_.find(key) == received_pieces_.end())
+        {
+            const auto block_len = block_ind < (blocks_per_piece - 1) ? 
+                BLOCK_LEN : piece_size % BLOCK_LEN;
 
-        request_queue_.emplace(index, block_ind, block_len);
+            request_queue_.emplace(index, block_ind, block_len);
+        }
     }
 }
 
-void piece_handler::rebuild_queue()
+bool piece_handler::rebuild_queue()
 {
-    // TODO
+    for(auto have_index : have_set_)
+    {
+        add_to_queue(have_index);
+    }
+
+    return !request_queue_.empty();
 }
 
 }

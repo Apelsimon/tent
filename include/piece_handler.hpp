@@ -22,13 +22,13 @@ public:
 
 private:
     void add_to_queue(uint32_t index);
-    void rebuild_queue();
+    bool rebuild_queue();
 
     const lt::torrent_info& torrent_info_;
 
     std::unordered_set<piece_index> have_set_;
     std::queue<piece_request> request_queue_;
-    received_piece_map received_pieces_;
+    received_pieces_map received_pieces_;
 };
 
 }

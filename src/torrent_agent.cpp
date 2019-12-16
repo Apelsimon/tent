@@ -231,7 +231,7 @@ void torrent_agent::request_piece()
 {
     if(!choked_)
     {
-        constexpr auto MAX_BURST = 100;
+        constexpr auto MAX_BURST = 500;
 
         auto result = piece_handler_.get_piece_request();
         auto send_count = 0;
