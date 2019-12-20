@@ -30,9 +30,12 @@ public:
     message(const byte_buffer& buffer) :
         id_(buffer.peek_32() == 0 ? KEEP_ALIVE : 
             static_cast<id>(buffer.peek_8(4))),
-        payload_(buffer.peek_32() == 0 ? byte_buffer{} : 
-            buffer.slice(5,  5 + buffer.peek_32() - 1))
+        payload_()
     {
+        if(id_ != KEEP_ALIVE)
+        { 
+            payload_.write(buffer.get_read() + 5, buffer.peek_32() - 1);
+        }
     }
 
     id id_;

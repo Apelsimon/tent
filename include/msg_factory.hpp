@@ -6,6 +6,12 @@
 namespace tent
 {
 
+namespace msg 
+{
+    struct piece;
+    struct request;
+}
+
 class byte_buffer;
 class piece_request;
 
@@ -19,7 +25,8 @@ public:
     static void unchoke(byte_buffer& buffer);
     static void interested(byte_buffer& buffer);
     static void not_interested(byte_buffer& buffer);
-    static void request(byte_buffer& buffer, const piece_request& req);
+    static void request(byte_buffer& buffer, const msg::request& req);
+    static void piece(byte_buffer& buffer, const msg::piece& piece);
 };
 
 }

@@ -14,9 +14,10 @@
 #include <sstream>
 #include <cstring>
 
-static size_t get_msg_len(const tent::byte_buffer& buffer, bool handshake_received);
-static bool msg_is_valid_handshake(const uint8_t* msg, size_t msg_len, 
+static size_t get_msg_len(const std::vector<uint8_t>& buffer, bool handshake_received);
+static bool msg_is_valid_handshake(const tent::byte_buffer& msg, 
     const std::string& expected_peer_id);
+static tent::byte_buffer chop(std::vector<uint8_t>& buffer, size_t slice_len);
 
 namespace tent 
 {
@@ -30,7 +31,7 @@ torrent_agent::torrent_agent(session& session, net_reactor& reactor,
     socket_(endpoint{"0.0.0.0", 0}),
     sm_(*this),
     io_buffer_(2048),
-    msg_buffer_(2048),
+    msg_buffer_(),
     piece_handler_(handler),
     torrent_info_(torrent_info),
     connected_(false),
@@ -140,34 +141,28 @@ void torrent_agent::disconnected()
 
 void torrent_agent::on_read(const byte_buffer& buffer)
 {
-    msg_buffer_.write(buffer.get_read(), buffer.read_available());
+    msg_buffer_.insert(msg_buffer_.end(), buffer.get_read(), 
+        buffer.get_read() + buffer.read_available());
     
-    while(msg_buffer_.read_available() >= 4 && 
-        msg_buffer_.read_available() >= get_msg_len(msg_buffer_, sm_.handshake_received()))
-    {
-        const auto msg_len = get_msg_len(msg_buffer_, sm_.handshake_received());
-        
+    auto msg_len = get_msg_len(msg_buffer_, sm_.handshake_received());
+    while(msg_buffer_.size() >= 4 && msg_buffer_.size() >= msg_len)
+    {   
+        const auto slice = chop(msg_buffer_, msg_len);
         if(!sm_.handshake_received())
         {
-            const auto msg = msg_buffer_.read(msg_len);
             // TODO: close connection if peer_id doesnt match
-            if(msg_is_valid_handshake(msg, msg_len, peer_info_->id_))
+            if(msg_is_valid_handshake(slice, peer_info_->id_))
             {
                 sm_.on_event(session_event::HANDSHAKE);
             }
         }
         else
         {
-            auto msg = message(msg_buffer_);
-            msg_buffer_.inc_read(msg_len);
-
+            auto msg = message(slice);
             handle_msg(msg);
         }
-    }
-    
-    if(msg_buffer_.read_available() == 0)
-    {
-        msg_buffer_.reset();
+
+        msg_len = get_msg_len(msg_buffer_, sm_.handshake_received());
     }
 }
 
@@ -192,9 +187,11 @@ void torrent_agent::handle_msg(message& msg)
         // TODO
         break;
     case message::id::CHOKE:
+        std::cout << "Choked by peer: " << *peer_info_ << std::endl;
         sm_.on_event(session_event::CHOKE);
         break;
     case message::id::UNCHOKE:
+        std::cout << "Unchoked by peer: " << *peer_info_ << std::endl;
         sm_.on_event(session_event::UNCHOKE);        
         break;
     case message::id::INTERESTED:
@@ -234,38 +231,49 @@ void torrent_agent::request_piece()
     {
         constexpr auto MAX_BURST = 500;
 
-        auto result = piece_handler_.get_piece_request();
         auto send_count = 0;
-
-        while(result.first && send_count < MAX_BURST)
+        while(send_count < MAX_BURST)
         {
+            auto result = piece_handler_.get_piece_request();
+            if(!result.first)
+            {
+                break;
+            }
+
             io_buffer_.reset();
             msg_factory::request(io_buffer_, result.second);
 
             send();
             ++send_count;
-
-            result = piece_handler_.get_piece_request();
         }
     }
 }
 
 } // namespace tent
 
-size_t get_msg_len(const tent::byte_buffer& buffer, bool handshake_received)
+size_t get_msg_len(const std::vector<uint8_t>& buffer, bool handshake_received)
 {
     if(!handshake_received)
     {
-        return buffer.peek_8() + 49;
+        return buffer[0] + 49;
     }
-    return buffer.peek_32() + 4;
+    return ntohl(*reinterpret_cast<const uint32_t*>(buffer.data())) + 4;
 }
 
-bool msg_is_valid_handshake(const uint8_t* msg, size_t msg_len, const std::string& expected_peer_id)
+bool msg_is_valid_handshake(const tent::byte_buffer& msg, const std::string& expected_peer_id)
 {
-    const auto proto_str_len = *msg;
-    const auto proto_str = std::string{reinterpret_cast<const char*>(msg + 1), proto_str_len};
-    const auto peer_id = std::string{reinterpret_cast<const char*>(msg + 48), 20};
+    const auto proto_str_len = msg.peek_8();
+    const auto proto_str = std::string{reinterpret_cast<const char*>(msg.get_read() + 1), proto_str_len};
+    const auto peer_id = std::string{reinterpret_cast<const char*>(msg.get_read() + 48), 20};
     
-    return msg_len == (proto_str_len + 49) && proto_str == tent::protocol::V1 && peer_id == expected_peer_id;
+    return msg.read_available() == (proto_str_len + 49) && proto_str == tent::protocol::V1 && peer_id == expected_peer_id;
+}
+
+tent::byte_buffer chop(std::vector<uint8_t>& buffer, size_t slice_len)
+{
+    tent::byte_buffer slice;
+    slice.write(buffer.data(), slice_len);
+    buffer.erase(buffer.begin(), buffer.begin() + slice_len);
+
+    return slice;
 }

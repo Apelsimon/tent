@@ -37,6 +37,7 @@ endif()
 
 set(SRC
     src/byte_buffer_test.cpp
+    src/message_test.cpp
 )
 
 add_executable(${PROJECT_NAME} ${SRC})

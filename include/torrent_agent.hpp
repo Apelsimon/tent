@@ -9,6 +9,7 @@
 #include "libtorrent/torrent_info.hpp"
 
 #include <memory>
+#include <vector>
 
 namespace tent 
 {
@@ -50,7 +51,7 @@ private:
     tcp_socket socket_;
     session_sm sm_;
     byte_buffer io_buffer_;
-    byte_buffer msg_buffer_;
+    std::vector<uint8_t> msg_buffer_;
     piece_handler& piece_handler_;
 
     lt::torrent_info& torrent_info_;

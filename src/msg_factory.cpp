@@ -3,6 +3,7 @@
 #include "bittorrent_protocol.hpp"
 #include "byte_buffer.hpp"
 #include "message.hpp"
+#include "messages.hpp"
 #include "peer_info.hpp"
 #include "pieces.hpp"
 
@@ -52,13 +53,22 @@ void msg_factory::not_interested(byte_buffer& buffer)
     buffer.write_8(message::id::NOT_INTERESTED);
 }
 
-void msg_factory::request(byte_buffer& buffer, const piece_request& req)
+void msg_factory::request(byte_buffer& buffer, const msg::request& req)
 {
     buffer.write_32(13);
     buffer.write_8(message::id::REQUEST);
     buffer.write_32(req.index_);
     buffer.write_32(req.begin_);
     buffer.write_32(req.length_);
+}
+
+void msg_factory::piece(byte_buffer& buffer, const msg::piece& piece)
+{
+    buffer.write_32(9 + piece.block_.read_available());
+    buffer.write_8(message::id::PIECE);
+    buffer.write_32(piece.index_);
+    buffer.write_32(piece.begin_);
+    buffer.write(piece.block_.get_read(), piece.block_.read_available());
 }
 
 } // namespace tent

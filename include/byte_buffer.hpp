@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <limits>
+#include <ostream>
 #include <vector>
 
 namespace tent
@@ -36,12 +37,13 @@ public:
     uint32_t peek_32(size_t offset = 0) const;
     uint64_t peek_64(size_t offset = 0) const;
     size_t size() const { return buff_.size(); }
-    byte_buffer slice(size_t begin, size_t end) const;
 
     bool operator==(const byte_buffer& other) const;
     bool operator!=(const byte_buffer& other) const;
 
     static constexpr auto MAX_SIZE = std::numeric_limits<uint32_t>::max();
+
+    void print(std::ostream& os) const;
 
 private:
     void expand(size_t size);
@@ -54,5 +56,7 @@ private:
 };
 
 }
+
+std::ostream& operator<<(std::ostream& os, const tent::byte_buffer& buff);
 
 #endif

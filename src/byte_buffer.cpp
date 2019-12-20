@@ -202,20 +202,6 @@ uint64_t byte_buffer::peek_64(size_t offset) const
     return (static_cast<uint64_t>(high) << 32) | low;
 }
 
-byte_buffer byte_buffer::slice(size_t begin, size_t end) const
-{
-    const auto size = end - begin;
-    if(size <= 0)
-    {
-        return {};
-    }
-
-    byte_buffer bb{size};
-    bb.write(data() + begin, size);
-
-    return bb;
-}
-
 bool byte_buffer::operator==(const byte_buffer& other) const
 {
     if(read_ != other.read_ || write_ != other.write_ || 
@@ -257,4 +243,17 @@ void byte_buffer::expand(size_t size)
 }
 
 
-} 
+void byte_buffer::print(std::ostream& os) const
+{
+    os << "[ read: " << read_ << ", write: " << write_ << ", size: " << 
+        buff_.size() << " ]";
+}
+
+}  // namespace tent
+
+
+std::ostream& operator<<(std::ostream& os, const tent::byte_buffer& buff)
+{
+    buff.print(os);
+    return os;
+}

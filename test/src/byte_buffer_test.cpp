@@ -1,16 +1,12 @@
 #include "byte_buffer.hpp"
 
+#include "test_util.hpp"
+
 #include "gtest/gtest.h"
 
 #include <vector>
-#include <random>
-#include <climits>
-#include <algorithm>
-#include <functional>
 
 using namespace tent;
-
-static std::vector<uint8_t> gen_rnd_data(size_t size);
 
 TEST(byte_buffer_test, inc_read)
 {
@@ -250,73 +246,6 @@ TEST(byte_buffer_test, equal)
     }    
 }
 
-TEST(byte_buffer_test, slice)
-{
-    constexpr auto SIZE = 6;
-    const uint8_t data[SIZE] = {1, 2, 3, 4, 5, 6};
-    byte_buffer bb(10);
-    bb.write(data, SIZE);
 
-    {
-        constexpr auto start = 1;
-        constexpr auto end = 4;
 
-        byte_buffer expected(end - start);
 
-        for(auto i = start; i < end; ++i)
-        {
-            expected.write_8(data[i]);
-        }        
-
-        byte_buffer actual = bb.slice(start, end);
-
-        ASSERT_EQ(expected, actual);
-    }
-
-    {
-        constexpr auto start = 0;
-        constexpr auto end = 2;
-
-        byte_buffer expected(end - start);
-
-        for(auto i = start; i < end; ++i)
-        {
-            expected.write_8(data[i]);
-        }        
-
-        byte_buffer actual = bb.slice(start, end);
-
-        ASSERT_EQ(expected, actual);
-    }
-
-    {
-        constexpr auto start = 3;
-        constexpr auto end = SIZE;
-
-        byte_buffer expected(end - start);
-
-        for(auto i = start; i < end; ++i)
-        {
-            expected.write_8(data[i]);
-        }        
-
-        byte_buffer actual = bb.slice(start, end);
-
-        ASSERT_EQ(expected, actual);
-    }
-}
-
-// ------------------------- Helpers -------------------------------------------------------
-
-std::vector<uint8_t> gen_rnd_data(size_t size)
-{
-    using random_bytes_engine = std::independent_bits_engine<
-        std::default_random_engine, CHAR_BIT, unsigned char>;
-
-    std::vector<uint8_t> data(size);
-
-    random_bytes_engine rbe;
-    std::generate(std::begin(data), std::end(data), std::ref(rbe));
-    
-    return data;
-}

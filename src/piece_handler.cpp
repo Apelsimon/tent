@@ -41,27 +41,25 @@ void piece_handler::have(byte_buffer& bitfield)
 void piece_handler::received(byte_buffer& piece)
 {
     piece_received_key key{piece.read_32(), piece.read_32()};
-    std::cout << "Piece received: (" << key.index_ << ", " << key.begin_ << 
-        ")" << std::endl;
     if(received_pieces_.find(key) == received_pieces_.end())
     {
-        std::cout << "placed in map" << std::endl;
         received_pieces_[key] = piece;
     }
 }
 
-std::pair<bool, piece_request> piece_handler::get_piece_request()
+// TODO: return unique_ptr or struct to signal success
+std::pair<bool, msg::request> piece_handler::get_piece_request()
 {
     if(request_queue_.empty())
     {
         if(rebuild_queue())
         {
-            // std::cout << "SUCCESSFULLY REBUILT QUEUE! size: " << request_queue_.size() << std::endl;
+            std::cout << "SUCCESSFULLY REBUILT QUEUE! size: " << request_queue_.size() << std::endl;
         }
         else
         {
             std::cout << "NOTHING MORE TO REBUILD!" << std::endl;
-            return {false, piece_request{0, 0, 0}};
+            return {false, msg::request{0, 0, 0}};
         }
     }
 
@@ -83,8 +81,8 @@ void piece_handler::add_to_queue(uint32_t index)
         piece_received_key key{index, block_ind};
         if(received_pieces_.find(key) == received_pieces_.end())
         {
-            const auto block_len = block_ind < (blocks_per_piece - 1) ? 
-                BLOCK_LEN : piece_size % BLOCK_LEN;
+            const auto block_len = (block_ind < (blocks_per_piece - 1)  || 
+                piece_size % BLOCK_LEN == 0) ? BLOCK_LEN : piece_size % BLOCK_LEN;
 
             request_queue_.emplace(index, block_ind, block_len);
         }
