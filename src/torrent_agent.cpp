@@ -213,6 +213,7 @@ void torrent_agent::handle_msg(message& msg)
         // TODO
         break;
     case message::id::PIECE:
+        piece_handler_.received(msg.payload_);
         request_piece();
         break;
     case message::id::CANCEL:

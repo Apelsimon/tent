@@ -41,9 +41,11 @@ void piece_handler::have(byte_buffer& bitfield)
 void piece_handler::received(byte_buffer& piece)
 {
     piece_received_key key{piece.read_32(), piece.read_32()};
-
+    std::cout << "Piece received: (" << key.index_ << ", " << key.begin_ << 
+        ")" << std::endl;
     if(received_pieces_.find(key) == received_pieces_.end())
     {
+        std::cout << "placed in map" << std::endl;
         received_pieces_[key] = piece;
     }
 }
@@ -54,7 +56,7 @@ std::pair<bool, piece_request> piece_handler::get_piece_request()
     {
         if(rebuild_queue())
         {
-            std::cout << "SUCCESSFULLY REBUILT QUEUE!" << std::endl;
+            // std::cout << "SUCCESSFULLY REBUILT QUEUE! size: " << request_queue_.size() << std::endl;
         }
         else
         {

@@ -101,6 +101,12 @@ void byte_buffer::write_8(uint8_t data)
     write(&data, 1);
 }
 
+void byte_buffer::write_16(uint16_t data)
+{
+    data = htons(data);
+    write(reinterpret_cast<uint8_t*>(&data), 2);
+}
+
 void byte_buffer::write_32(uint32_t data)
 {
     data = htonl(data);
@@ -109,12 +115,17 @@ void byte_buffer::write_32(uint32_t data)
 
 void byte_buffer::write_64(uint64_t data)
 {
+    const uint32_t high = htonl(static_cast<uint32_t>(data >> 32));
+    const uint32_t low = htonl(static_cast<uint32_t>(data & 0xffffffff));
+
+    data = (static_cast<uint64_t>(high) << 32) | low;
     write(reinterpret_cast<uint8_t*>(&data), 8);
 }
 
 uint8_t* byte_buffer::read(size_t size)
 {
     read_ += size;
+
     if(!invariant())
     { 
         throw std::range_error{"Read of size: " + std::to_string(size) + " violates invariant"};
@@ -128,19 +139,50 @@ uint8_t byte_buffer::read_8()
     return *read(1);
 }
 
+uint16_t byte_buffer::read_16()
+{
+    uint16_t res;
+    auto data = read(2);
+    std::copy(data, data + 2, reinterpret_cast<uint8_t*>(&res));
+
+    return ntohs(res);
+}
+
 uint32_t byte_buffer::read_32() 
 {
     auto data = read(4);
 
     uint32_t res;
-    std::copy(data, data + 4, &res);
+    std::copy(data, data + 4, reinterpret_cast<uint8_t*>(&res));
 
-    return res;
+    return ntohl(res);
+}
+
+uint64_t byte_buffer::read_64()
+{
+    auto data = read(8);
+    uint64_t res;
+    std::copy(data, data + 8, reinterpret_cast<uint8_t*>(&res));
+
+    const uint32_t high = ntohl(static_cast<uint32_t>(res >> 32));
+    const uint32_t low = ntohl(static_cast<uint32_t>(res & 0xffffffff));
+
+    return (static_cast<uint64_t>(high) << 32) | low;
 }
 
 uint8_t byte_buffer::peek_8(size_t offset) const
 {
     return *(get_read() + offset);
+}
+
+uint16_t byte_buffer::peek_16(size_t offset) const
+{
+    uint16_t res;
+    
+    const auto read = get_read() + offset;
+    std::copy(read, read + 4, reinterpret_cast<uint8_t*>(&res));
+
+    return ntohs(res);
 }
 
 uint32_t byte_buffer::peek_32(size_t offset) const
@@ -150,6 +192,14 @@ uint32_t byte_buffer::peek_32(size_t offset) const
     std::copy(read, read + 4, reinterpret_cast<uint8_t*>(&res));
 
     return ntohl(res);
+}
+
+uint64_t byte_buffer::peek_64(size_t offset) const
+{
+    const uint32_t high = peek_32(offset);
+    const uint32_t low = peek_32(4 + offset);
+
+    return (static_cast<uint64_t>(high) << 32) | low;
 }
 
 byte_buffer byte_buffer::slice(size_t begin, size_t end) const
@@ -164,6 +214,30 @@ byte_buffer byte_buffer::slice(size_t begin, size_t end) const
     bb.write(data() + begin, size);
 
     return bb;
+}
+
+bool byte_buffer::operator==(const byte_buffer& other) const
+{
+    if(read_ != other.read_ || write_ != other.write_ || 
+        buff_.size() != other.buff_.size())
+    {
+        return false;
+    }
+
+    for(auto i = 0; i < read_available(); ++i)
+    {
+        if(peek_8(i) != other.peek_8(i))
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool byte_buffer::operator!=(const byte_buffer& other) const
+{
+    return !(*this == other);
 }
 
 bool byte_buffer::invariant() const

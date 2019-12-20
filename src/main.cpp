@@ -1,6 +1,7 @@
 #include "file_reader.hpp"
 #include "net_reactor.hpp"
 #include "session.hpp"
+#include "signal_handler.hpp"
 
 #include "libtorrent/torrent_info.hpp"
 
@@ -10,6 +11,8 @@
 
 int main(int argc, char* argv[])
 {
+    tent::signal_handler::init();
+
     auto file_buffer = tent::file_reader::to_buffer(argv[1]);
     lt::error_code error;
     
