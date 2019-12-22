@@ -247,7 +247,7 @@ void torrent_agent::request_pieces()
 {
     if(!choked_)
     {
-        constexpr auto MAX_BURST = 100;
+        constexpr auto MAX_BURST = 15; // TODO: increase when multiple receive is available
 
         auto send_count = 0;
         while(send_count < MAX_BURST)
@@ -255,10 +255,8 @@ void torrent_agent::request_pieces()
             auto result = piece_handler_.get_piece_request(peer_info_->id_);
             if(!result.first)
             {
-                session_.stop();
                 break;
             }
-
             
             io_buffer_.reset();
             msg_factory::request(io_buffer_, result.second);

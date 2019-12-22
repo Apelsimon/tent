@@ -13,6 +13,7 @@ namespace msg
 
 struct request
 {
+    request() = default;
     request(uint32_t index, uint32_t begin, uint32_t len) :
         index_(index),
         begin_(begin),

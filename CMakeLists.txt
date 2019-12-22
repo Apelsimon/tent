@@ -12,6 +12,7 @@ add_subdirectory(test)
 set(SRC
     src/byte_buffer.cpp
     src/endpoint.cpp
+    src/file_handler.cpp
     src/file_reader.cpp
     src/http_client.cpp
     src/http_messages.cpp

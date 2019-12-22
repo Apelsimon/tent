@@ -3,8 +3,6 @@
 
 #include "byte_buffer.hpp"
 
-#include <iostream>
-
 namespace tent
 {
 

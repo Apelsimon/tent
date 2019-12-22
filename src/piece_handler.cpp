@@ -9,7 +9,11 @@ namespace tent
 {
 
 piece_handler::piece_handler(const lt::torrent_info& info) :
-    torrent_info_(info)
+    torrent_info_(info),
+    have_map_(),
+    request_map_(),
+    received_pieces_(),
+    file_handler_(info)
 {}
 
 void piece_handler::have(const std::string& peer_id, uint32_t index)
@@ -42,14 +46,21 @@ void piece_handler::have(const std::string& peer_id, byte_buffer& bitfield)
 void piece_handler::received(byte_buffer& piece)
 {
     static uint64_t received = 0;
+    static uint64_t duplicates = 0;
 
     piece_received_key key{piece.read_32(), piece.read_32()};
     if(received_pieces_.find(key) == received_pieces_.end())
     {
         ++received;
-        std::cout << "Received pieces: " << received << std::endl;
         received_pieces_[key] = piece;
+        file_handler_.write(key, piece);
     }
+    else
+    {
+        std::cout << "Received pieces: " << received << std::endl;
+        std::cout << "received duplicate, count: " << ++duplicates << std::endl;
+    }
+    
 }
 
 // TODO: return unique_ptr or struct to signal success
@@ -68,16 +79,21 @@ std::pair<bool, msg::request> piece_handler::get_piece_request(const std::string
         }
     }
 
-    auto piece = queue.front();
-    queue.pop();
+    msg::request piece_req;
+    piece_received_key key;
+    do
+    {
+        piece_req = queue.front();
+        queue.pop();
 
-    return {true, piece};
+        key = {piece_req.index_, piece_req.begin_};
+    } while (received_pieces_.find(key) != received_pieces_.end() && !queue.empty());   
+
+    return {true, piece_req};
 }
 
 void piece_handler::add_to_queue(const std::string& peer_id, uint32_t index)
-{
-    static constexpr uint16_t BLOCK_LEN = 1 << 14;
-    
+{    
     const auto piece_size = torrent_info_.piece_size(index);
     const auto blocks_per_piece = std::ceil(piece_size / static_cast<double>(BLOCK_LEN));
 

@@ -10,16 +10,15 @@
 namespace tent
 {
 
-class piece_received_key
+struct piece_received_key
 {
-public:
-    uint32_t index_;
-    uint32_t begin_;
+  uint32_t index_;
+  uint32_t begin_;
 
-    bool operator==(const piece_received_key& other) const 
-    {
-        return index_ == other.index_ && begin_ == other.begin_;
-    }
+  bool operator==(const piece_received_key& other) const 
+  {
+      return index_ == other.index_ && begin_ == other.begin_;
+  }
 };
 
 using received_pieces_map = std::unordered_map<piece_received_key, byte_buffer>;
