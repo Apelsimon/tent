@@ -136,7 +136,8 @@ uint8_t* byte_buffer::read(size_t size)
 
 uint8_t byte_buffer::read_8() 
 {
-    return *read(1);
+    uint8_t res = *read(1);
+    return res;
 }
 
 uint16_t byte_buffer::read_16()

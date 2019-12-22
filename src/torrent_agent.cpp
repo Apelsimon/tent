@@ -204,7 +204,7 @@ void torrent_agent::handle_msg(message& msg)
         // TODO
         break;
     case message::id::BITFIELD:
-        piece_handler_.have(msg.payload_);
+        piece_handler_.have(peer_info_->id_, msg.payload_);
         break;
     case message::id::REQUEST:
         // TODO
@@ -234,7 +234,7 @@ void torrent_agent::request_piece()
         auto send_count = 0;
         while(send_count < MAX_BURST)
         {
-            auto result = piece_handler_.get_piece_request();
+            auto result = piece_handler_.get_piece_request(peer_info_->id_);
             if(!result.first)
             {
                 break;
@@ -242,7 +242,6 @@ void torrent_agent::request_piece()
 
             io_buffer_.reset();
             msg_factory::request(io_buffer_, result.second);
-
             send();
             ++send_count;
         }

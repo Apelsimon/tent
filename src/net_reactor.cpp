@@ -3,6 +3,8 @@
 #include <iostream>
 #include <sys/epoll.h>
 
+#include <cstring>
+
 namespace tent
 {
 
@@ -23,6 +25,10 @@ void net_reactor::start()
     while(running_)
     {
         auto nfds = epoll_wait(efd_, events, MAX_EVENTS, -1);
+        if(nfds == -1)
+        {
+            std::cerr << "epoll_wait error: " << std::strerror(errno) << std::endl;
+        }
 
         for(auto i = 0; i < nfds; ++i)
         {

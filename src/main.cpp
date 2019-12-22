@@ -30,6 +30,7 @@ int main(int argc, char* argv[])
 
     std::cout << "start reactor" << std::endl;
     reactor.start();
+    std::cout << "reactor stopped" << std::endl;
 
     return EXIT_SUCCESS;
 }
