@@ -60,8 +60,6 @@ std::pair<bool, msg::request> piece_handler::get_piece_request(const std::string
     {
         if(rebuild_queue(peer_id))
         {
-            std::cout << "SUCCESSFULLY REBUILT QUEUE! size: " << queue.size() 
-                << " for peer: " << peer_id << std::endl;
         }
         else
         {
@@ -91,7 +89,7 @@ void piece_handler::add_to_queue(const std::string& peer_id, uint32_t index)
         {
             const auto block_len = (block_ind < (blocks_per_piece - 1)  || 
                 piece_size % BLOCK_LEN == 0) ? BLOCK_LEN : piece_size % BLOCK_LEN;
-                
+
             queue.emplace(index, block_ind, block_len);
         }
     }

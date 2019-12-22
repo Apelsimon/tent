@@ -14,13 +14,12 @@ public:
     net_reactor();
     ~net_reactor();
 
-    void start();
+    int poll();
     void stop();
     bool reg(inet_reactor_client& client, uint32_t events);
     bool unreg(inet_reactor_client& client);
 
 private:
-    bool running_;
     int efd_;
     std::unordered_map<int, inet_reactor_client*> clients_;
 };

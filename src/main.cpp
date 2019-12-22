@@ -5,12 +5,15 @@
 
 #include "libtorrent/torrent_info.hpp"
 
+#include <chrono>
 #include <iostream>
 #include <vector>
 
 
 int main(int argc, char* argv[])
 {
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+
     tent::signal_handler::init();
 
     auto file_buffer = tent::file_reader::to_buffer(argv[1]);
@@ -28,9 +31,10 @@ int main(int argc, char* argv[])
     tent::net_reactor reactor;
     tent::session session{reactor, torrent_info};
 
-    std::cout << "start reactor" << std::endl;
-    reactor.start();
-    std::cout << "reactor stopped" << std::endl;
+    session.start();
+
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::seconds>(end - begin).count() << "[s]" << std::endl;
 
     return EXIT_SUCCESS;
 }

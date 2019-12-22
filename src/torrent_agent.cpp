@@ -30,7 +30,7 @@ torrent_agent::torrent_agent(session& session, net_reactor& reactor,
     peer_info_(std::move(info)),
     socket_(endpoint{"0.0.0.0", 0}),
     sm_(*this),
-    io_buffer_(2048),
+    io_buffer_(1 << 15),
     msg_buffer_(),
     piece_handler_(handler),
     torrent_info_(torrent_info),
@@ -64,6 +64,11 @@ void torrent_agent::read()
             std::cout << "Disconnected with " << *peer_info_ << std::endl;
             sm_.on_event(session_event::DISCONNECTED);
         }        
+    }
+
+    if(errno && errno != EAGAIN && errno != EWOULDBLOCK)
+    {
+        std::cerr << "read error: " << std::strerror(errno) << std::endl;
     }
 
     if(io_buffer_.read_available() > 0)
@@ -130,13 +135,21 @@ void torrent_agent::choked()
 void torrent_agent::unchoked() 
 {
     choked_ = false;
-    request_piece();
+    request_pieces();
 }
 
 void torrent_agent::disconnected()
 {
     connected_ = false;
     socket_.close();
+}
+
+void torrent_agent::execute()
+{
+    if(connected_ && !choked_)
+    {
+        request_pieces();
+    }
 }
 
 void torrent_agent::on_read(const byte_buffer& buffer)
@@ -169,13 +182,18 @@ void torrent_agent::on_read(const byte_buffer& buffer)
 void torrent_agent::send()
 {
     errno = 0;
-    while(io_buffer_.read_available() > 0 && !errno)
+    while(connected_ && io_buffer_.read_available() > 0 && !errno)
     {
         const auto res = socket_.write(io_buffer_);
         if(res > 0)
         {
             io_buffer_.inc_read(res);
         }
+    }
+
+    if(errno && errno != EAGAIN && errno != EWOULDBLOCK)
+    {
+        std::cerr << "write error: " << std::strerror(errno) << std::endl;
     }
 }
 
@@ -211,7 +229,7 @@ void torrent_agent::handle_msg(message& msg)
         break;
     case message::id::PIECE:
         piece_handler_.received(msg.payload_);
-        request_piece();
+        request_pieces();
         break;
     case message::id::CANCEL:
         // TODO
@@ -225,26 +243,30 @@ void torrent_agent::handle_msg(message& msg)
     }
 }
 
-void torrent_agent::request_piece()
+void torrent_agent::request_pieces()
 {
     if(!choked_)
     {
-        constexpr auto MAX_BURST = 500;
+        constexpr auto MAX_BURST = 100;
 
         auto send_count = 0;
         while(send_count < MAX_BURST)
-        {
+        {   
             auto result = piece_handler_.get_piece_request(peer_info_->id_);
             if(!result.first)
             {
+                session_.stop();
                 break;
             }
 
+            
             io_buffer_.reset();
             msg_factory::request(io_buffer_, result.second);
             send();
+            
             ++send_count;
         }
+        
     }
 }
 

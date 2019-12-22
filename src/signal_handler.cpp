@@ -14,6 +14,7 @@ void signal_handler::init()
     signal(SIGINT, handle);
     signal(SIGSEGV, handle);
     signal(SIGTERM, handle);
+    signal(SIGPIPE, handle);
 }
 
 void signal_handler::handle(int signum)
@@ -37,6 +38,10 @@ void signal_handler::handle(int signum)
         break;
     case SIGTERM:
         std::cout << "RECEIVED SIGTERM" << std::endl;
+        break;
+    case SIGPIPE:
+        std::cout << "RECEIVED SIGPIPE" << std::endl;
+        return;
         break;
     }
 

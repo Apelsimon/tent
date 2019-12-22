@@ -8,49 +8,44 @@
 namespace tent
 {
 
-net_reactor::net_reactor() : running_(false), efd_(epoll_create1(0))
+net_reactor::net_reactor() : 
+    efd_(epoll_create1(0))
 {
 
 }
 
 net_reactor::~net_reactor() {}
 
-void net_reactor::start()
+int net_reactor::poll()
 {
     constexpr auto MAX_EVENTS = 10;
+    constexpr auto WAIT_MS = 5000;
+
     struct epoll_event events[MAX_EVENTS];
     
-    running_ = true;
-
-    while(running_)
+    const auto nfds = epoll_wait(efd_, events, MAX_EVENTS, WAIT_MS);
+    if(nfds == -1)
     {
-        auto nfds = epoll_wait(efd_, events, MAX_EVENTS, -1);
-        if(nfds == -1)
-        {
-            std::cerr << "epoll_wait error: " << std::strerror(errno) << std::endl;
-        }
+        std::cerr << "epoll_wait error: " << std::strerror(errno) << std::endl;
+    }
 
-        for(auto i = 0; i < nfds; ++i)
+    for(auto i = 0; i < nfds; ++i)
+    {
+        auto it = clients_.find(events[i].data.fd);
+        if(it != clients_.end())
         {
-            auto it = clients_.find(events[i].data.fd);
-            if(it != clients_.end())
+            if(events[i].events & EPOLLIN)
             {
-                if(events[i].events & EPOLLIN)
-                {
-                    it->second->read();
-                }
-                if(events[i].events & EPOLLOUT)
-                {
-                    it->second->write();
-                }
+                it->second->read();
+            }
+            if(events[i].events & EPOLLOUT)
+            {
+                it->second->write();
             }
         }
     }
-}
 
-void net_reactor::stop()
-{
-    running_ = false;
+    return nfds;
 }
 
 bool net_reactor::reg(inet_reactor_client& client, uint32_t events)

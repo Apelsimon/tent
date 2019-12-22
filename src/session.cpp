@@ -18,9 +18,9 @@ session::session(net_reactor& reactor, const lt::torrent_info& info) :
     tracker_client_(std::make_unique<tracker_client>(info)),
     torrent_info_(info),
     piece_handler_(info),
-    local_peer_id_(create_local_peer_id())
+    local_peer_id_(create_local_peer_id()),
+    running_(false)
 {
-    start();
 }
 
 void session::start()
@@ -34,15 +34,31 @@ void session::start()
 
     for(auto& peer : received_peers)
     {
-        auto connection = std::make_unique<torrent_agent>(*this, reactor_, 
+        auto agent = std::make_unique<torrent_agent>(*this, reactor_, 
             torrent_info_, std::move(peer), piece_handler_);
-        agents_.push_back(std::move(connection));
+        agents_.push_back(std::move(agent));
+    }
+
+    running_ = true;
+
+    while(running_)
+    {
+        const auto poll_res = reactor_.poll();
+
+        if(poll_res < 0) 
+        {
+            stop();
+        }
+        else if(poll_res == 0)// timeout
+        {
+            // TODO: do stuff on timeout
+        }
     }
 }
 
 session::~session() {}
 
-}
+} // namespace tent
 
 std::string create_local_peer_id()
 {

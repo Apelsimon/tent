@@ -38,12 +38,14 @@ public:
     void choked() override;
     void unchoked() override;
     void disconnected() override;
+
+    void execute();
     
 private:
     void on_read(const byte_buffer& buffer);
     void send();
     void handle_msg(message& msg);
-    void request_piece();
+    void request_pieces();
 
     session& session_;
     net_reactor& reactor_;

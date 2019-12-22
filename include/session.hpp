@@ -18,11 +18,12 @@ public:
     session(net_reactor& reactor, const lt::torrent_info& info);
     ~session();
 
+    void start();
+    void stop() { running_ = false; }
+
     const std::string& peer_id() const { return local_peer_id_; }
 
 private:
-    void start();
-
     static constexpr uint16_t PORT = 12345;
 
     net_reactor& reactor_;
@@ -33,6 +34,7 @@ private:
 
     piece_handler piece_handler_;
     const std::string local_peer_id_;
+    bool running_;
 };
 
 }
