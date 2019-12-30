@@ -285,7 +285,8 @@ bool msg_is_valid_handshake(const tent::byte_buffer& msg, const std::string& exp
     const auto proto_str = std::string{reinterpret_cast<const char*>(msg.get_read() + 1), proto_str_len};
     const auto peer_id = std::string{reinterpret_cast<const char*>(msg.get_read() + 48), 20};
     
-    return msg.read_available() == (proto_str_len + 49) && proto_str == tent::protocol::V1 && peer_id == expected_peer_id;
+    return msg.read_available() == static_cast<size_t>(proto_str_len + 49) && 
+        proto_str == tent::protocol::V1 && peer_id == expected_peer_id;
 }
 
 tent::byte_buffer chop(std::vector<uint8_t>& buffer, size_t slice_len)

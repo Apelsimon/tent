@@ -47,56 +47,40 @@ void piece_handler::have(const std::string& peer_id, byte_buffer& bitfield)
 
 void piece_handler::received(byte_buffer& piece)
 {
-    static uint64_t received = 0;
-    static uint64_t duplicates = 0;
-
     piece_received_key key{piece.read_32(), piece.read_32()};
     if(!received_pieces_[key])
     {
-        ++received;
         received_pieces_[key] = true;
         file_handler_.write(key, piece);
 
-        if(is_done())
+        if(is_done()) // TODO: naive to check this every time
         {
             session_.stop();
         }
     }
-    else
-    {
-        std::cout << "Received pieces: " << received << std::endl;
-        std::cout << "received duplicate, count: " << ++duplicates << std::endl;
-    }
-    
 }
 
 // TODO: return unique_ptr or struct to signal success
 std::pair<bool, msg::request> piece_handler::get_piece_request(const std::string& peer_id)
 {
     auto& queue = request_map_[peer_id];
-    if(queue.empty())
+    if(queue.empty() && !rebuild_queue(peer_id))
     {
-        if(rebuild_queue(peer_id))
-        {
-        }
-        else
-        {
-            std::cout << "NOTHING MORE TO REBUILD!" << std::endl;
-            return {false, msg::request{0, 0, 0}};
-        }
+        std::cout << "Nothing more to rebuild" << std::endl;
+        return {false, msg::request{0, 0, 0}};
     }
 
     msg::request piece_req;
-    piece_received_key key;
+    auto unreceived_piece_requested = false;
     do
     {
         piece_req = queue.front();
         queue.pop();
 
-        key = {piece_req.index_, piece_req.begin_};
-    } while (received_pieces_[key] && !queue.empty());   
+        unreceived_piece_requested = received_pieces_[{piece_req.index_, piece_req.begin_}];
+    } while (unreceived_piece_requested && !queue.empty());   
 
-    return {true, piece_req};
+    return {!unreceived_piece_requested, piece_req};
 }
 
 void piece_handler::add_to_queue(const std::string& peer_id, uint32_t index)
@@ -131,11 +115,13 @@ bool piece_handler::rebuild_queue(const std::string& peer_id)
 
 bool piece_handler::is_done()
 {
-    for(auto piece_ind = 0; piece_ind < torrent_info_.num_pieces(); ++piece_ind)
+    const uint32_t num_pieces = torrent_info_.num_pieces();
+
+    for(uint32_t piece_ind = 0; piece_ind < num_pieces; ++piece_ind)
     {
         const auto piece_size = torrent_info_.piece_size(piece_ind);
         const auto blocks_per_piece = std::ceil(piece_size / static_cast<double>(BLOCK_LEN));
-        for(auto block_ind = 0; block_ind < blocks_per_piece; ++block_ind)
+        for(uint32_t block_ind = 0; block_ind < blocks_per_piece; ++block_ind)
         {
             if(!received_pieces_[{piece_ind, block_ind * BLOCK_LEN}])
             {

@@ -12,6 +12,12 @@
 
 int main(int argc, char* argv[])
 {
+    if(argc < 2)
+    {
+        std::cout << "usage: tent <torrent file>" << std::endl;
+        return EXIT_FAILURE;
+    }
+    
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
     tent::signal_handler::init();

@@ -54,11 +54,12 @@ set(INCLUDES
 add_executable(${PROJECT_NAME} ${SRC})
 target_include_directories(${PROJECT_NAME} PUBLIC ${INCLUDES})
 target_link_libraries(${PROJECT_NAME} ${DEPENDENCIES})
-
+target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -pedantic -Werror)
 
 # tent lib
 add_library(${PROJECT_NAME}_ STATIC ${SRC})
 target_include_directories(${PROJECT_NAME}_ PUBLIC ${INCLUDES})
 target_link_libraries(${PROJECT_NAME}_ ${DEPENDENCIES})
+target_compile_options(${PROJECT_NAME}_ PRIVATE -Wall -Wextra -pedantic -Werror)
 
 

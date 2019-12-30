@@ -211,7 +211,7 @@ bool byte_buffer::operator==(const byte_buffer& other) const
         return false;
     }
 
-    for(auto i = 0; i < read_available(); ++i)
+    for(size_t i = 0; i < read_available(); ++i)
     {
         if(peek_8(i) != other.peek_8(i))
         {

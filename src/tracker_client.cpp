@@ -4,7 +4,7 @@
 #include "http_messages.hpp"
 #include "peer_info.hpp"
 
-static std::string percent_encode(const lt::sha1_hash& hash, std::size_t num = 2, char separator = '%');
+static std::string percent_encode(const lt::sha1_hash& hash, ssize_t num = 2, char separator = '%');
 static void parse_peers(std::vector<std::unique_ptr<tent::peer_info>>& peers, const std::string& tracker_rsp);
 
 namespace tent
@@ -54,7 +54,7 @@ bool tracker_client::announce(uint16_t port, const std::string& peer_id,
 
 }
 
-std::string percent_encode(const lt::sha1_hash& hash, std::size_t num, char separator)
+std::string percent_encode(const lt::sha1_hash& hash, ssize_t num, char separator)
 {
     std::stringstream ss;
     ss << separator << hash;
