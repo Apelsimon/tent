@@ -15,10 +15,12 @@ namespace tent
 
 using piece_index = uint32_t;
 
+class session;
+
 class piece_handler
 {
 public:
-    piece_handler(const lt::torrent_info& info);
+    piece_handler(session& session, const lt::torrent_info& info);
 
     void have(const std::string& peer_id, uint32_t index);
     void have(const std::string& peer_id, byte_buffer& bitfield);
@@ -29,7 +31,9 @@ public:
 private:
     void add_to_queue(const std::string& peer_id, uint32_t index);
     bool rebuild_queue(const std::string& peer_id);
+    bool is_done();
 
+    session& session_;
     const lt::torrent_info& torrent_info_;
 
     std::unordered_map<std::string, std::unordered_set<piece_index>> have_map_;

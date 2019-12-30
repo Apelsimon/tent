@@ -17,7 +17,7 @@ session::session(net_reactor& reactor, const lt::torrent_info& info) :
     reactor_(reactor),
     tracker_client_(std::make_unique<tracker_client>(info)),
     torrent_info_(info),
-    piece_handler_(info),
+    piece_handler_(*this, info),
     local_peer_id_(create_local_peer_id()),
     running_(false)
 {

@@ -2,6 +2,8 @@
 
 #include "byte_buffer.hpp"
 #include "file_reader.hpp"
+#include "net_reactor.hpp"
+#include "session.hpp"
 
 #include "libtorrent/torrent_info.hpp"
 
@@ -23,13 +25,15 @@ protected:
     
         info_ = std::make_unique<lt::torrent_info>(file_buffer.data(), static_cast<int>(file_buffer.size()), error);
         ASSERT_EQ(error.value(), 0);
-
-        handler_ = std::make_unique<piece_handler>(*info_);
+        session_ = std::make_unique<session>(reactor_, *info_);
+        handler_ = std::make_unique<piece_handler>(*session_, *info_);
     }
 
     byte_buffer buildBitfield();
-
+    
     std::unique_ptr<lt::torrent_info> info_;
+    net_reactor reactor_;
+    std::unique_ptr<session> session_;
     std::unique_ptr<piece_handler> handler_;
 };
 

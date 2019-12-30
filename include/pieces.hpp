@@ -21,7 +21,7 @@ struct piece_received_key
   }
 };
 
-using received_pieces_map = std::unordered_map<piece_received_key, byte_buffer>;
+using received_pieces_map = std::unordered_map<piece_received_key, bool>;
 
 }
 
