@@ -32,12 +32,17 @@ private:
     void add_to_queue(const std::string& peer_id, uint32_t index);
     bool rebuild_queue(const std::string& peer_id);
     bool is_done();
+    bool write_if_valid(uint32_t index);
 
     session& session_;
     const lt::torrent_info& torrent_info_;
 
-    std::unordered_map<std::string, std::unordered_set<piece_index>> have_map_;
-    std::unordered_map<std::string, std::queue<msg::request>> request_map_;
+    using peer_id = std::string;
+    using have_map = std::unordered_map<peer_id, std::unordered_set<piece_index>>;
+    using request_map = std::unordered_map<peer_id, std::queue<msg::request>>;
+
+    have_map have_map_;
+    request_map request_map_;
     received_pieces_map received_pieces_;
     file_handler file_handler_;
 };

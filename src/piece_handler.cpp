@@ -3,8 +3,15 @@
 #include "byte_buffer.hpp"
 #include "session.hpp"
 
+#include "libtorrent/hasher.hpp"
+
 #include <bitset>
 #include <iostream>
+
+/* TODO: 
+    - create helpers to retreive e.g piece and block sizes
+    - look over redundancy
+*/
 
 namespace tent
 {
@@ -48,14 +55,18 @@ void piece_handler::have(const std::string& peer_id, byte_buffer& bitfield)
 void piece_handler::received(byte_buffer& piece)
 {
     piece_received_key key{piece.read_32(), piece.read_32()};
-    if(!received_pieces_[key])
+    if(!received_pieces_[key].received_)
     {
-        received_pieces_[key] = true;
-        file_handler_.write(key, piece);
+        received_pieces_[key].block_.write(piece.get_read(), piece.read_available());
+        received_pieces_[key].received_ = true;
 
-        if(is_done()) // TODO: naive to check this every time
+        if(write_if_valid(key.index_))
         {
-            session_.stop();
+            std::cout << "Valid piece " << key.index_ << " written to file" << std::endl;
+            if(is_done()) 
+            {
+                session_.stop();
+            }
         }
     }
 }
@@ -77,7 +88,7 @@ std::pair<bool, msg::request> piece_handler::get_piece_request(const std::string
         piece_req = queue.front();
         queue.pop();
 
-        unreceived_piece_requested = received_pieces_[{piece_req.index_, piece_req.begin_}];
+        unreceived_piece_requested = received_pieces_[{piece_req.index_, piece_req.begin_}].received_;
     } while (unreceived_piece_requested && !queue.empty());   
 
     return {!unreceived_piece_requested, piece_req};
@@ -92,7 +103,7 @@ void piece_handler::add_to_queue(const std::string& peer_id, uint32_t index)
     for(uint32_t block_ind = 0; block_ind < blocks_per_piece; ++block_ind)
     {
         piece_received_key key{index, block_ind * BLOCK_LEN};
-        if(!received_pieces_[key])
+        if(!received_pieces_[key].received_)
         {
             const auto block_len = (block_ind < (blocks_per_piece - 1)  || 
                 piece_size % BLOCK_LEN == 0) ? BLOCK_LEN : piece_size % BLOCK_LEN;
@@ -123,7 +134,7 @@ bool piece_handler::is_done()
         const auto blocks_per_piece = std::ceil(piece_size / static_cast<double>(BLOCK_LEN));
         for(uint32_t block_ind = 0; block_ind < blocks_per_piece; ++block_ind)
         {
-            if(!received_pieces_[{piece_ind, block_ind * BLOCK_LEN}])
+            if(!received_pieces_[{piece_ind, block_ind * BLOCK_LEN}].received_)
             {
                 return false;
             }
@@ -131,6 +142,38 @@ bool piece_handler::is_done()
     }
 
     return true;
+}
+
+bool piece_handler::write_if_valid(uint32_t index)
+{
+    const auto piece_size = torrent_info_.piece_size(index);
+    const auto blocks_per_piece = std::ceil(piece_size / static_cast<double>(BLOCK_LEN));
+
+    lt::hasher hasher;
+    for(uint32_t block_ind = 0; block_ind < blocks_per_piece; ++block_ind)
+    {
+        auto& block = received_pieces_[{index, block_ind * BLOCK_LEN}];
+        if(!block.received_)
+        {
+            return false;
+        }
+        
+        hasher.update(reinterpret_cast<const char*>(block.block_.get_read()), 
+            block.block_.read_available());
+    }
+
+    const auto piece_valid_for_print = hasher.final() == torrent_info_.hash_for_piece(index);
+    if(piece_valid_for_print)
+    {
+        for(uint32_t block_ind = 0; block_ind < blocks_per_piece; ++block_ind)
+        {
+            piece_received_key key{index, block_ind * BLOCK_LEN};
+            auto& block = received_pieces_[key];
+            file_handler_.write(key, block.block_);
+        } 
+    }
+
+    return piece_valid_for_print;
 }
 
 }
