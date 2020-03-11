@@ -20,7 +20,7 @@ public:
 
     void start();
     void stop() { running_ = false; }
-
+    void print_left() { piece_handler_.print_left();}
     const std::string& peer_id() const { return local_peer_id_; }
 
 private:

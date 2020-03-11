@@ -7,6 +7,7 @@
 
 #include <bitset>
 #include <iostream>
+#include <vector>
 
 /* TODO: 
     - create helpers to retreive e.g piece and block sizes
@@ -16,14 +17,29 @@
 namespace tent
 {
 
+static void parse_dir_struct(std::vector<std::string>& dirs, const std::string& path); 
+static void build_dir_tree(const lt::file_storage& file_storage);
+
 piece_handler::piece_handler(session& session, const lt::torrent_info& info) :
     session_(session),
     torrent_info_(info),
     have_map_(),
     request_map_(),
     received_pieces_(),
-    file_handler_(info)
-{}
+    file_handlers_()
+{
+    const auto& file_storage = info.files();
+
+    build_dir_tree(file_storage);
+    
+    // init file handlers
+    for(auto i : file_storage.file_range())
+    {
+        const std::string file_name{file_storage.file_name(i)};
+        file_handlers_.emplace(std::piecewise_construct, 
+            std::forward_as_tuple(file_name), std::forward_as_tuple(i, info));
+    }
+}
 
 void piece_handler::have(const std::string& peer_id, uint32_t index)
 {
@@ -62,11 +78,23 @@ void piece_handler::received(byte_buffer& piece)
 
         if(write_if_valid(key.index_))
         {
-            std::cout << "Valid piece " << key.index_ << " written to file" << std::endl;
+            std::cout << "wrote valid piece: " << key.index_ << std::endl;
             if(is_done()) 
             {
                 session_.stop();
             }
+        }
+    }
+}
+
+void piece_handler::print_left()
+{
+    std::cout << "unreceived pieces: " << std::endl;
+    for(const auto& pair : received_pieces_)
+    {
+        if(!pair.second.received_)
+        {
+            std::cout << " ind: " << pair.first.index_ <<", beg: " << pair.first.begin_ <<  std::endl;
         }
     }
 }
@@ -169,11 +197,60 @@ bool piece_handler::write_if_valid(uint32_t index)
         {
             piece_received_key key{index, block_ind * BLOCK_LEN};
             auto& block = received_pieces_[key];
-            file_handler_.write(key, block.block_);
+
+            const auto file_slice = torrent_info_.map_block(key.index_, key.begin_, BLOCK_LEN);
+            assert(file_slice.size() == 1);
+
+            const auto file_index = file_slice[0].file_index;
+            const std::string file_name{torrent_info_.files().file_name(file_index)};
+
+            auto it = file_handlers_.find(file_name);
+            if(it != file_handlers_.end())
+            {
+                it->second.write(key, block.block_);
+            }
+            else
+            {
+                std::cout << "no file handler found for file: " << file_name << std::endl;
+            }
+            
         } 
     }
 
     return piece_valid_for_print;
 }
 
+void parse_dir_struct(std::vector<std::string>& dirs, const std::string& path)
+{
+    const auto it = path.find("/");
+    if(it != std::string::npos)
+    {
+        auto dir = path.substr(0, it);
+        if(std::find(dirs.begin(), dirs.end(), dir) == dirs.end())
+        {
+            dirs.push_back(dir);
+        }        
+        parse_dir_struct(dirs, path.substr(it + 1));
+    }
 }
+
+// TODO: can be done better 
+void build_dir_tree(const lt::file_storage& file_storage)
+{
+    std::vector<std::string> dirs;
+    for(auto index : file_storage.file_range())
+    {
+        const std::string file_path{file_storage.file_path(index)};
+        parse_dir_struct(dirs, file_path);   
+    }
+    
+    std::stringstream path{""};
+    for(const auto& dir : dirs)
+    {
+        path << dir;
+        mkdir(path.str().c_str(), 0777);
+        path << "/";
+    }
+}
+
+} // namespace tent

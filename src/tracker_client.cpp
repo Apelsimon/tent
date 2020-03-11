@@ -5,7 +5,7 @@
 #include "peer_info.hpp"
 
 static std::string percent_encode(const lt::sha1_hash& hash, ssize_t num = 2, char separator = '%');
-static void parse_peers(std::vector<std::unique_ptr<tent::peer_info>>& peers, const std::string& tracker_rsp);
+static bool parse_peers(std::vector<std::unique_ptr<tent::peer_info>>& peers, const std::string& tracker_rsp);
 
 namespace tent
 {
@@ -18,6 +18,7 @@ tracker_client::tracker_client(const lt::torrent_info& info) :
 
 tracker_client::~tracker_client() {}
 
+// TODO: return received peers instead (if possible?)
 bool tracker_client::announce(uint16_t port, const std::string& peer_id,
     std::vector<std::unique_ptr<peer_info>>& received_peers)
 {
@@ -27,29 +28,34 @@ bool tracker_client::announce(uint16_t port, const std::string& peer_id,
         return false;
     }
 
-    // TODO: announce to multiple trackers
-    auto& tracker = torrent_info_.trackers()[0]; 
-
-    std::stringstream ss;
-    ss << tracker.url << "?info_hash=" << percent_encode(torrent_info_.info_hash()) << "&peer_id=" 
-        << peer_id << "&port=" << port << "&downloaded=0&uploaded=0&left="
-        << torrent_info_.total_size() << "&event=started";
-
-    auto resp = http_client_->get(ss.str());
-
-    if(resp->status() == http::status_code::MOVED_PERMANENTLY)
+    for(auto& tracker : torrent_info_.trackers())
     {
-        resp = http_client_->get(resp->field(http::header_field::LOCATION));
+        if(tracker.url.find("udp") != std::string::npos)
+        {
+            continue; // TODO: support udp tracker
+        }
+
+        std::stringstream ss;
+        ss << tracker.url << "?info_hash=" << percent_encode(torrent_info_.info_hash()) << "&peer_id=" 
+            << peer_id << "&port=" << port << "&downloaded=0&uploaded=0&left="
+            << torrent_info_.total_size() << "&event=started";
+        
+        auto resp = http_client_->get(ss.str());
+
+        if(resp->status() == http::status_code::MOVED_PERMANENTLY)
+        {
+            resp = http_client_->get(resp->field(http::header_field::LOCATION));
+        }
+
+        if(resp->status() == http::status_code::OK && 
+            parse_peers(received_peers, resp->body()))
+        {
+            return true;
+        }
     }
 
-    if(resp->status() != http::status_code::OK)
-    {
-        std::cout << "Announce to trackers failed" << std::endl;
-        return false;
-    }
-
-    parse_peers(received_peers, resp->body());
-    return true;
+    std::cout << "Announce to trackers failed" << std::endl;
+    return false;
 }
 
 }
@@ -68,7 +74,7 @@ std::string percent_encode(const lt::sha1_hash& hash, ssize_t num, char separato
     return result;
 }
 
-void parse_peers(std::vector<std::unique_ptr<tent::peer_info>>& peers, const std::string& tracker_rsp)
+bool parse_peers(std::vector<std::unique_ptr<tent::peer_info>>& peers, const std::string& tracker_rsp)
 {
     lt::error_code error;
     auto decoded = lt::bdecode(tracker_rsp, error);
@@ -76,12 +82,18 @@ void parse_peers(std::vector<std::unique_ptr<tent::peer_info>>& peers, const std
     if(error.value() != 0)
     {
         std::cerr << "Failed to decode: '" << error.message() << std::endl;
-        return;
+        return false;
     }
 
     peers.clear();
 
     auto peer_list = decoded.dict_find_list("peers");
+    if(peer_list.type() != lt::bdecode_node::list_t)
+    {
+        std::cerr << "Couldn't find peer list" << std::endl;
+        return false;
+    }
+
     for(auto i = 0; i < peer_list.list_size(); ++i)
     {
         const auto peer_dict = peer_list.list_at(i);
@@ -89,5 +101,7 @@ void parse_peers(std::vector<std::unique_ptr<tent::peer_info>>& peers, const std
         const auto ip = std::string{peer_dict.dict_find_string_value("ip")};
         const auto port = peer_dict.dict_find_int_value("port");
         peers.push_back(std::make_unique<tent::peer_info>(id, ip, port));
-    }    
+    }
+
+    return peer_list.list_size();    
 }

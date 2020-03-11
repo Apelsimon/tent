@@ -6,6 +6,8 @@
 namespace tent
 {
 
+std::function<void()> sig_cb;
+
 void signal_handler::init()
 {
     signal(SIGABRT, handle);
@@ -17,8 +19,14 @@ void signal_handler::init()
     signal(SIGPIPE, handle);
 }
 
+void signal_handler::set_cb(std::function<void()> cb)
+{
+    sig_cb = cb;
+}
+
 void signal_handler::handle(int signum)
 {
+    sig_cb();
     switch(signum)
     {
     case SIGABRT:

@@ -25,6 +25,7 @@ public:
     void have(const std::string& peer_id, uint32_t index);
     void have(const std::string& peer_id, byte_buffer& bitfield);
     void received(byte_buffer& piece);
+    void print_left();
     std::pair<bool, msg::request> get_piece_request(const std::string& peer_id);
 
     static constexpr uint16_t BLOCK_LEN = 1 << 14;
@@ -44,7 +45,7 @@ private:
     have_map have_map_;
     request_map request_map_;
     received_pieces_map received_pieces_;
-    file_handler file_handler_;
+    std::unordered_map<std::string, file_handler> file_handlers_;
 };
 
 }

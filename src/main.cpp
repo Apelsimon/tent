@@ -9,6 +9,7 @@
 #include <iostream>
 #include <vector>
 
+#include <inttypes.h>
 
 int main(int argc, char* argv[])
 {
@@ -36,7 +37,7 @@ int main(int argc, char* argv[])
 
     tent::net_reactor reactor;
     tent::session session{reactor, torrent_info};
-
+    tent::signal_handler::set_cb( [&session]() { session.print_left(); });
     session.start();
 
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
