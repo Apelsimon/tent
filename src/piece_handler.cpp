@@ -7,7 +7,7 @@
 
 #include <bitset>
 #include <iostream>
-#include <vector>
+#include <unordered_set>
 
 /* TODO: 
     - create helpers to retreive e.g piece and block sizes
@@ -17,7 +17,6 @@
 namespace tent
 {
 
-static void parse_dir_struct(std::vector<std::string>& dirs, const std::string& path); 
 static void build_dir_tree(const lt::file_storage& file_storage);
 
 piece_handler::piece_handler(session& session, const lt::torrent_info& info) :
@@ -31,7 +30,7 @@ piece_handler::piece_handler(session& session, const lt::torrent_info& info) :
     const auto& file_storage = info.files();
 
     build_dir_tree(file_storage);
-    
+
     // init file handlers
     for(auto i : file_storage.file_range())
     {
@@ -220,36 +219,33 @@ bool piece_handler::write_if_valid(uint32_t index)
     return piece_valid_for_print;
 }
 
-void parse_dir_struct(std::vector<std::string>& dirs, const std::string& path)
+static void build_dirs(std::unordered_set<std::string>& dirs, std::string& path)
 {
-    const auto it = path.find("/");
-    if(it != std::string::npos)
+    std::stringstream current_dir{""};
+    auto it = path.find("/");
+
+    while(it != std::string::npos)
     {
-        auto dir = path.substr(0, it);
-        if(std::find(dirs.begin(), dirs.end(), dir) == dirs.end())
+        current_dir << path.substr(0, it);
+        if(std::find(dirs.begin(), dirs.end(), current_dir.str()) == dirs.end())
         {
-            dirs.push_back(dir);
-        }        
-        parse_dir_struct(dirs, path.substr(it + 1));
+            dirs.insert(current_dir.str());
+            mkdir(current_dir.str().c_str(), 0777);
+        }
+        current_dir << "/";
+
+        path = path.substr(it + 1);
+        it = path.find("/");
     }
 }
 
-// TODO: can be done better 
 void build_dir_tree(const lt::file_storage& file_storage)
 {
-    std::vector<std::string> dirs;
+    std::unordered_set<std::string> dirs;
     for(auto index : file_storage.file_range())
     {
-        const std::string file_path{file_storage.file_path(index)};
-        parse_dir_struct(dirs, file_path);   
-    }
-    
-    std::stringstream path{""};
-    for(const auto& dir : dirs)
-    {
-        path << dir;
-        mkdir(path.str().c_str(), 0777);
-        path << "/";
+        std::string file_path{file_storage.file_path(index)};
+        build_dirs(dirs, file_path);
     }
 }
 
