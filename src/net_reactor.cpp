@@ -8,8 +8,9 @@
 namespace tent
 {
 
-net_reactor::net_reactor() : 
-    efd_(epoll_create1(0))
+net_reactor::net_reactor(int wait_ms) : 
+    efd_(epoll_create1(0)),
+    wait_ms_(wait_ms)
 {
 
 }
@@ -18,12 +19,11 @@ net_reactor::~net_reactor() {}
 
 int net_reactor::poll()
 {
-    constexpr auto MAX_EVENTS = 10;
-    constexpr auto WAIT_MS = 5000;
+    constexpr auto MAX_EVENTS = 50;
 
     struct epoll_event events[MAX_EVENTS];
     
-    const auto nfds = epoll_wait(efd_, events, MAX_EVENTS, WAIT_MS);
+    const auto nfds = epoll_wait(efd_, events, MAX_EVENTS, wait_ms_);
     if(nfds == -1)
     {
         std::cerr << "epoll_wait error: " << std::strerror(errno) << std::endl;

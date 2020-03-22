@@ -11,7 +11,7 @@ namespace tent
 class net_reactor
 {
 public:
-    net_reactor();
+    net_reactor(int wait_ms = 5000);
     ~net_reactor();
 
     int poll();
@@ -21,6 +21,7 @@ public:
 
 private:
     int efd_;
+    int wait_ms_;
     std::unordered_map<int, inet_reactor_client*> clients_;
 };
 

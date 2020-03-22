@@ -22,6 +22,11 @@ endpoint::endpoint(const std::string& ip, uint16_t port)
     }
 }
 
+endpoint::endpoint(const struct sockaddr* addr)
+{
+    std::memcpy(&endpoint_, addr, sizeof(sockaddr_in)); // TODO: support IPv6
+}
+
 std::ostream& operator<<(std::ostream& os, const tent::endpoint& info) 
 { 
     char ip[INET_ADDRSTRLEN];

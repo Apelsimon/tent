@@ -15,6 +15,7 @@ public:
     file_handler(lt::file_index_t index, const lt::torrent_info& info);
 
     void write(const piece_received_key& pos, byte_buffer& data);
+    void write(byte_buffer& data, std::int64_t offset, std::int64_t size);
 
 private:
     const lt::file_index_t index_;

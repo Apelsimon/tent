@@ -9,6 +9,7 @@
 namespace tent
 {
 
+// TODO: change to int8_t buff?
 class byte_buffer
 {
 public:

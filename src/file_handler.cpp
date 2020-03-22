@@ -27,4 +27,11 @@ void file_handler::write(const piece_received_key& pos, byte_buffer& data)
     file_.write(reinterpret_cast<const char*>(data.get_read()), write_len);
 }
 
+void file_handler::write(byte_buffer& data, std::int64_t offset, std::int64_t size)
+{
+    file_.seekp(offset);
+    file_.write(reinterpret_cast<const char*>(data.read(size)), size);
+    // data.inc_read(size);
+}
+
 } // namespace tent

@@ -6,13 +6,9 @@
 #include <memory>
 #include <vector>
 
+
 namespace tent
 {
-
-namespace http
-{
-class client;
-}
 
 class peer_info;
 
@@ -26,8 +22,7 @@ public:
         std::vector<std::unique_ptr<peer_info>>& received_peers);
     
 private:
-    std::unique_ptr<http::client> http_client_;
-    const lt::torrent_info torrent_info_;
+    const lt::torrent_info& torrent_info_;
 };
 
 }

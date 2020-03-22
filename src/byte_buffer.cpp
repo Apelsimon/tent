@@ -1,9 +1,13 @@
 #include "byte_buffer.hpp"
 
-#include <algorithm>
+#include "net.hpp"
+
+
 #include <arpa/inet.h>
 #include <stdexcept>
 #include <iostream>
+
+
 
 namespace tent
 {
@@ -115,10 +119,7 @@ void byte_buffer::write_32(uint32_t data)
 
 void byte_buffer::write_64(uint64_t data)
 {
-    const uint32_t high = htonl(static_cast<uint32_t>(data >> 32));
-    const uint32_t low = htonl(static_cast<uint32_t>(data & 0xffffffff));
-
-    data = (static_cast<uint64_t>(high) << 32) | low;
+    data = net::htont(data);
     write(reinterpret_cast<uint8_t*>(&data), 8);
 }
 
@@ -136,7 +137,7 @@ uint8_t* byte_buffer::read(size_t size)
 
 uint8_t byte_buffer::read_8() 
 {
-    uint8_t res = *read(1);
+    auto res = *read(1);
     return res;
 }
 
@@ -165,10 +166,7 @@ uint64_t byte_buffer::read_64()
     uint64_t res;
     std::copy(data, data + 8, reinterpret_cast<uint8_t*>(&res));
 
-    const uint32_t high = ntohl(static_cast<uint32_t>(res >> 32));
-    const uint32_t low = ntohl(static_cast<uint32_t>(res & 0xffffffff));
-
-    return (static_cast<uint64_t>(high) << 32) | low;
+    return net::htont(res);
 }
 
 uint8_t byte_buffer::peek_8(size_t offset) const
@@ -195,6 +193,7 @@ uint32_t byte_buffer::peek_32(size_t offset) const
     return ntohl(res);
 }
 
+// TODO: use net::htont for this
 uint64_t byte_buffer::peek_64(size_t offset) const
 {
     const uint32_t high = peek_32(offset);

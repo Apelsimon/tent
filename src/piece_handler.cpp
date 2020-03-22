@@ -80,6 +80,7 @@ void piece_handler::received(byte_buffer& piece)
             std::cout << "wrote valid piece: " << key.index_ << std::endl;
             if(is_done()) 
             {
+                std::cout << "Nothing more to write. Stop session" << std::endl;
                 session_.stop();
             }
         }
@@ -105,7 +106,7 @@ std::pair<bool, msg::request> piece_handler::get_piece_request(const std::string
     if(queue.empty() && !rebuild_queue(peer_id))
     {
         std::cout << "Nothing more to rebuild" << std::endl;
-        return {false, msg::request{0, 0, 0}};
+        return {false, {}};
     }
 
     msg::request piece_req;
@@ -197,22 +198,23 @@ bool piece_handler::write_if_valid(uint32_t index)
             piece_received_key key{index, block_ind * BLOCK_LEN};
             auto& block = received_pieces_[key];
 
-            const auto file_slice = torrent_info_.map_block(key.index_, key.begin_, BLOCK_LEN);
-            assert(file_slice.size() == 1);
+            const auto file_slices = torrent_info_.map_block(key.index_, key.begin_, BLOCK_LEN);
 
-            const auto file_index = file_slice[0].file_index;
-            const std::string file_name{torrent_info_.files().file_name(file_index)};
+            for(auto& file_slice : file_slices)
+            {
+                const auto file_index = file_slice.file_index;
+                const std::string file_name{torrent_info_.files().file_name(file_index)};
 
-            auto it = file_handlers_.find(file_name);
-            if(it != file_handlers_.end())
-            {
-                it->second.write(key, block.block_);
-            }
-            else
-            {
-                std::cout << "no file handler found for file: " << file_name << std::endl;
-            }
-            
+                auto it = file_handlers_.find(file_name);
+                if(it != file_handlers_.end())
+                {
+                    it->second.write(block.block_, file_slice.offset, file_slice.size);
+                }
+                else
+                {
+                    std::cout << "no file handler found for file: " << file_name << std::endl;
+                }
+            }            
         } 
     }
 

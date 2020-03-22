@@ -51,6 +51,7 @@ void session::start()
         }
         else if(poll_res == 0)// timeout
         {
+            std::cout << "session poll timeout" << std::endl;
             // TODO: do stuff on timeout
         }
     }

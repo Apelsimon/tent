@@ -18,15 +18,19 @@ set(SRC
     src/http_messages.cpp
     src/main.cpp
     src/msg_factory.cpp
+    src/net.cpp
     src/net_reactor.cpp
     src/peer_info.cpp
     src/piece_handler.cpp
+    src/random.cpp
     src/session.cpp
     src/session_sm.cpp
     src/signal_handler.cpp
     src/tcp_socket.cpp
     src/torrent_agent.cpp
-    src/tracker_client.cpp    
+    src/tracker_client.cpp
+    src/udp_socket.cpp    
+    src/udp_tracker_client.cpp
 )
 
 # dependencies 

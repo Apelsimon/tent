@@ -24,7 +24,7 @@ public:
     const std::string& peer_id() const { return local_peer_id_; }
 
 private:
-    static constexpr uint16_t PORT = 12345;
+    static constexpr uint16_t PORT = 6881; 
 
     net_reactor& reactor_;
     std::unique_ptr<tracker_client> tracker_client_;

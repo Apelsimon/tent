@@ -7,7 +7,7 @@
 #include "peer_info.hpp"
 #include "pieces.hpp"
 
-static std::vector<std::uint8_t> hex_str_to_byte_buff(const std::string& hex);
+static std::vector<uint8_t> hex_str_to_byte_buff(const std::string& hex);
 
 namespace tent
 {
@@ -71,6 +71,37 @@ void msg_factory::piece(byte_buffer& buffer, const msg::piece& piece)
     buffer.write(piece.block_.get_read(), piece.block_.read_available());
 }
 
+void msg_factory::connect(byte_buffer& buffer, uint32_t transaction_id)
+{
+    constexpr uint64_t CONNECTION_ID = 0x41727101980;
+    constexpr uint32_t CONNECT_ACTION = 0; // TODO: replace with action enum
+
+    buffer.write_64(CONNECTION_ID);
+    buffer.write_32(CONNECT_ACTION);
+    buffer.write_32(transaction_id);
+}
+
+void msg_factory::announce(byte_buffer& buffer, uint64_t connection_id, 
+        uint32_t transaction_id, const std::string& info_hash, 
+        const std::string& peer_id, uint64_t left, uint32_t key, uint16_t port)
+{ 
+    constexpr uint32_t ANNOUNCE_ACTION = 1; // TODO: replace with action enum
+
+    buffer.write_64(connection_id);
+    buffer.write_32(ANNOUNCE_ACTION); 
+    buffer.write_32(transaction_id);
+    buffer.write(hex_str_to_byte_buff(info_hash).data(), 20); 
+    buffer.write(reinterpret_cast<const uint8_t*>(peer_id.c_str()), 20);
+    buffer.write_64(0); // downloaded
+    buffer.write_64(left);
+    buffer.write_64(0); // uploaded
+    buffer.write_32(0); // event
+    buffer.write_32(0); // default ip
+    buffer.write_32(key);
+    buffer.write_32(-1); // num want TODO: cant write -1 (default) to byte buffer. 
+    buffer.write_16(port);
+}
+
 } // namespace tent
 
 static int char_to_int(char input)
@@ -85,9 +116,9 @@ static int char_to_int(char input)
     return 0;
 }
 
-std::vector<std::uint8_t> hex_str_to_byte_buff(const std::string& hex)
+std::vector<uint8_t> hex_str_to_byte_buff(const std::string& hex)
 {
-    std::vector<std::uint8_t> buffer(hex.size() / 2);
+    std::vector<uint8_t> buffer(hex.size() / 2);
 
     auto i = 0;
     for(auto& entry : buffer)
