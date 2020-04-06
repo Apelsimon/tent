@@ -25,7 +25,8 @@ piece_handler::piece_handler(session& session, const lt::torrent_info& info) :
     have_map_(),
     request_map_(),
     received_pieces_(),
-    file_handlers_()
+    file_handlers_(),
+    written_pieces_(0)
 {
     const auto& file_storage = info.files();
 
@@ -77,10 +78,10 @@ void piece_handler::received(byte_buffer& piece)
 
         if(write_if_valid(key.index_))
         {
-            std::cout << "wrote valid piece: " << key.index_ << std::endl;
+            // std::cout << "wrote valid piece: " << key.index_ << std::endl;
             if(is_done()) 
             {
-                std::cout << "Nothing more to write. Stop session" << std::endl;
+                // std::cout << "Nothing more to write. Stop session" << std::endl;
                 session_.stop();
             }
         }
@@ -105,7 +106,7 @@ std::pair<bool, msg::request> piece_handler::get_piece_request(const std::string
     auto& queue = request_map_[peer_id];
     if(queue.empty() && !rebuild_queue(peer_id))
     {
-        std::cout << "Nothing more to rebuild" << std::endl;
+        // std::cout << "Nothing more to rebuild" << std::endl;
         return {false, {}};
     }
 
@@ -154,22 +155,7 @@ bool piece_handler::rebuild_queue(const std::string& peer_id)
 
 bool piece_handler::is_done()
 {
-    const uint32_t num_pieces = torrent_info_.num_pieces();
-
-    for(uint32_t piece_ind = 0; piece_ind < num_pieces; ++piece_ind)
-    {
-        const auto piece_size = torrent_info_.piece_size(piece_ind);
-        const auto blocks_per_piece = std::ceil(piece_size / static_cast<double>(BLOCK_LEN));
-        for(uint32_t block_ind = 0; block_ind < blocks_per_piece; ++block_ind)
-        {
-            if(!received_pieces_[{piece_ind, block_ind * BLOCK_LEN}].received_)
-            {
-                return false;
-            }
-        }
-    }
-
-    return true;
+    return written_pieces_ >= torrent_info_.num_pieces();
 }
 
 bool piece_handler::write_if_valid(uint32_t index)
@@ -216,6 +202,7 @@ bool piece_handler::write_if_valid(uint32_t index)
                 }
             }            
         } 
+        ++written_pieces_;
     }
 
     return piece_valid_for_print;

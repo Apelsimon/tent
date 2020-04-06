@@ -10,7 +10,7 @@
 
 #include <sys/epoll.h>
 
-#include <iostream>
+// #include <iostream> // TODO: log to file
 #include <sstream>
 #include <cstring>
 
@@ -60,14 +60,14 @@ void torrent_agent::read()
         }
         else if(res == 0)
         {
-            std::cout << "Disconnected with " << *peer_info_ << std::endl;
+            // std::cout << "Disconnected with " << *peer_info_ << std::endl;
             sm_.on_event(session_event::DISCONNECTED);
         }        
     }
 
     if(errno && errno != EAGAIN && errno != EWOULDBLOCK)
     {
-        std::cerr << "read error: " << std::strerror(errno) << std::endl;
+        // std::cerr << "read error: " << std::strerror(errno) << std::endl;
     }
 
     if(io_buffer_.read_available() > 0)
@@ -192,7 +192,7 @@ void torrent_agent::send()
 
     if(errno && errno != EAGAIN && errno != EWOULDBLOCK)
     {
-        std::cerr << "write error: " << std::strerror(errno) << std::endl;
+        // std::cerr << "write error: " << std::strerror(errno) << std::endl;
     }
 }
 
@@ -204,11 +204,11 @@ void torrent_agent::handle_msg(message& msg)
         // TODO
         break;
     case message::id::CHOKE:
-        std::cout << "Choked by peer: " << *peer_info_ << std::endl;
+        // std::cout << "Choked by peer: " << *peer_info_ << std::endl;
         sm_.on_event(session_event::CHOKE);
         break;
     case message::id::UNCHOKE:
-        std::cout << "Unchoked by peer: " << *peer_info_ << std::endl;
+        // std::cout << "Unchoked by peer: " << *peer_info_ << std::endl;
         sm_.on_event(session_event::UNCHOKE);        
         break;
     case message::id::INTERESTED:
@@ -237,7 +237,7 @@ void torrent_agent::handle_msg(message& msg)
         // TODO
         break;
     default:
-        std::cerr << "Unknow message id" << std::endl;  
+        // std::cerr << "Unknow message id" << std::endl;  
         break;
     }
 }

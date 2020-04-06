@@ -27,6 +27,7 @@ public:
     void received(byte_buffer& piece);
     void print_left();
     std::pair<bool, msg::request> get_piece_request(const std::string& peer_id);
+    int written() const { return written_pieces_; }
 
     static constexpr uint16_t BLOCK_LEN = 1 << 14;
 private:
@@ -46,6 +47,7 @@ private:
     request_map request_map_;
     received_pieces_map received_pieces_;
     std::unordered_map<std::string, file_handler> file_handlers_;
+    int written_pieces_;
 };
 
 }

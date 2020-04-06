@@ -26,7 +26,7 @@ std::unique_ptr<imessage> client::get(const std::string& url)
 		resp->curl_.setOpt(curlpp::options::HeaderFunction(
 			std::bind(&response::header_cb, resp.get(), _1, _2, _3)));
         resp->curl_.setOpt(curlpp::Options::Url{url});
-		resp->curl_.setOpt(curlpp::Options::ConnectTimeout{5});
+		resp->curl_.setOpt(curlpp::Options::ConnectTimeout{1});
         resp->curl_.perform();
         resp->body_ = oss.str();
 	}

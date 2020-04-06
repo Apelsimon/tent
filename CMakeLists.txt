@@ -47,6 +47,7 @@ set(DEPENDENCIES
     ${Boost_LIBRARIES}
     curlpp
     stdc++fs
+    pthread
 )
 
 set(INCLUDES

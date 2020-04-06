@@ -5,6 +5,7 @@
 #include "peer_info.hpp"
 #include "tracker_client.hpp"
 
+#include <iomanip>
 #include <iostream>
 #include <random>
 
@@ -19,7 +20,14 @@ session::session(net_reactor& reactor, const lt::torrent_info& info) :
     torrent_info_(info),
     piece_handler_(*this, info),
     local_peer_id_(create_local_peer_id()),
-    running_(false)
+    notified_(false),
+    running_(false),
+    mutex_(),
+    cv_()
+{
+}
+
+session::~session() 
 {
 }
 
@@ -40,9 +48,37 @@ void session::start()
     }
 
     running_ = true;
+    std::string progress_str{""};
 
+    std::thread engine_thread{&session::engine, this};
+    std::unique_lock<std::mutex> lock(mutex_);
     while(running_)
     {
+        cv_.wait(lock, [this]{ return notified_; });
+        print_progress(progress_str);
+        notified_ = false;
+    }
+    
+    engine_thread.join();
+}
+
+void session::stop()
+{ 
+    running_ = false; 
+    notified_ = true;
+}
+
+float session::completed() 
+{
+    return 100.f * piece_handler_.written() / static_cast<float>(torrent_info_.num_pieces());
+}
+
+void session::engine()
+{
+    while(running_)
+    {
+        std::unique_lock<std::mutex> lg{mutex_};
+
         const auto poll_res = reactor_.poll();
 
         if(poll_res < 0) 
@@ -51,13 +87,31 @@ void session::start()
         }
         else if(poll_res == 0)// timeout
         {
-            std::cout << "session poll timeout" << std::endl;
+            // std::cout << "session poll timeout" << std::endl;
             // TODO: do stuff on timeout
         }
+        notified_ = true;
+        cv_.notify_one();
     }
 }
 
-session::~session() {}
+void session::print_progress(std::string& progress_str)
+{
+    
+    const auto progress_percentage = completed();
+    const auto done = progress_percentage >= 100.f;
+    if(done || progress_percentage > progress_str.size())
+    {
+        progress_str += "#";
+        std::cout << "\r" << std::fixed << std::setprecision(2) << progress_percentage 
+            << "% completed [" << progress_str << std::setw(101 - progress_str.size()) 
+            << std::setfill(' ') << "]" << std::flush;
+        if(done)
+        {
+            std::cout << std::endl;
+        }
+    }
+}
 
 } // namespace tent
 

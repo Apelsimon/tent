@@ -65,7 +65,7 @@ bool tracker_client::announce(uint16_t port, const std::string& peer_id,
             }
         }
     }
-
+    std::cout << "available peers: " << received_peers.size() << std::endl;
     return !received_peers.empty();
 }
 

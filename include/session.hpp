@@ -5,6 +5,10 @@
 
 #include "libtorrent/torrent_info.hpp"
 
+#include <condition_variable>
+#include <mutex>
+#include <thread>
+
 namespace tent
 {
 
@@ -19,11 +23,15 @@ public:
     ~session();
 
     void start();
-    void stop() { running_ = false; }
+    void stop(); 
     void print_left() { piece_handler_.print_left();}
     const std::string& peer_id() const { return local_peer_id_; }
+    float completed();
 
 private:
+    void engine();
+    void print_progress(std::string& progress_str);
+    
     static constexpr uint16_t PORT = 6881; 
 
     net_reactor& reactor_;
@@ -34,7 +42,10 @@ private:
 
     piece_handler piece_handler_;
     const std::string local_peer_id_;
+    bool notified_;
     bool running_;
+    std::mutex mutex_;
+    std::condition_variable cv_;
 };
 
 }
