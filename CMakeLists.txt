@@ -27,6 +27,7 @@ set(SRC
     src/session_sm.cpp
     src/signal_handler.cpp
     src/tcp_socket.cpp
+    src/timer.cpp
     src/torrent_agent.cpp
     src/tracker_client.cpp
     src/udp_socket.cpp    
