@@ -7,9 +7,11 @@
 #include "peer_info.hpp"
 #include "piece_handler.hpp"
 #include "session.hpp"
+#include "timer.hpp"
 
 #include <sys/epoll.h>
 
+#include <algorithm>
 // #include <iostream> // TODO: log to file
 #include <sstream>
 #include <cstring>
@@ -23,7 +25,7 @@ namespace tent
 
 torrent_agent::torrent_agent(session& session, net_reactor& reactor, 
     lt::torrent_info& torrent_info, std::unique_ptr<peer_info> info,
-    piece_handler& handler) :
+    piece_handler& handler, timer& timer) :
     session_(session),
     reactor_(reactor),
     peer_info_(std::move(info)),
@@ -32,13 +34,15 @@ torrent_agent::torrent_agent(session& session, net_reactor& reactor,
     io_buffer_(1 << 15),
     msg_buffer_(),
     piece_handler_(handler),
+    timer_(timer),
     torrent_info_(torrent_info),
     connected_(false),
-    choked_(true)
+    choked_(true),
+    connection_attempts_(0)
 {
-    socket_.bind();
-
+    socket_.set_blocking(false);
     reactor_.reg(*this, EPOLLIN | EPOLLOUT);
+    start();
 }
 
 torrent_agent::~torrent_agent()
@@ -84,10 +88,14 @@ void torrent_agent::write()
         socklen_t len = sizeof(error);
         if(socket_.getsockopt(SOL_SOCKET, SO_ERROR, &error, &len))
         {
-            connected_ = error == 0; // TODO: retry connection on fail
+            connected_ = error == 0; 
             if(connected_)
             {
                 sm_.on_event(session_event::CONNECTED);
+            }
+            else 
+            {
+                disconnected();
             }
         }
     }        
@@ -100,6 +108,7 @@ void torrent_agent::start()
 
 void torrent_agent::connect()
 {
+    ++connection_attempts_;
     connected_ = socket_.connect(peer_info_->endpoint_);
     if(connected_)
     {
@@ -139,8 +148,28 @@ void torrent_agent::unchoked()
 
 void torrent_agent::disconnected()
 {
-    connected_ = false;
+    // std::cout << "torrent agent disconnected with peer " << *peer_info_ << std::endl;
+
+    reactor_.unreg(*this);
     socket_.close();
+
+    connected_ = false;
+
+    constexpr auto TIME_TO_RECONNECT_MS = 5000;
+    timer_.reg(*this, TIME_TO_RECONNECT_MS * std::pow(2, std::max(0, connection_attempts_ - 1)));
+}
+
+void torrent_agent::on_timeout() 
+{
+    // std::cout << "Reconnect socket to peer: " << *peer_info_ << ", attempts: " << reconnect_attempts_ << std::endl;
+    timer_.unreg(*this);
+
+    socket_.reset();
+    socket_.set_blocking(false);
+    // std::cout << "try to reg socket with fd: " << socket_.fd() << std::endl;
+    reactor_.reg(*this, EPOLLIN | EPOLLOUT);
+
+    start();
 }
 
 void torrent_agent::execute()

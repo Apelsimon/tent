@@ -19,7 +19,7 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
     
-    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+    auto begin = std::chrono::steady_clock::now();
 
     tent::signal_handler::init();
 
@@ -40,7 +40,7 @@ int main(int argc, char* argv[])
     tent::signal_handler::set_cb( [&session]() { session.print_left(); });
     session.start();
 
-    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    auto end = std::chrono::steady_clock::now();
     std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::seconds>(end - begin).count() << "[s]" << std::endl;
 
     return EXIT_SUCCESS;

@@ -17,6 +17,8 @@ namespace tent
 session::session(net_reactor& reactor, const lt::torrent_info& info) : 
     reactor_(reactor),
     tracker_client_(std::make_unique<tracker_client>(info)),
+    agents_(),
+    timer_(),
     torrent_info_(info),
     piece_handler_(*this, info),
     local_peer_id_(create_local_peer_id()),
@@ -43,7 +45,7 @@ void session::start()
     for(auto& peer : received_peers)
     {
         auto agent = std::make_unique<torrent_agent>(*this, reactor_, 
-            torrent_info_, std::move(peer), piece_handler_);
+            torrent_info_, std::move(peer), piece_handler_, timer_);
         agents_.push_back(std::move(agent));
     }
 
@@ -78,6 +80,8 @@ void session::engine()
     while(running_)
     {
         std::unique_lock<std::mutex> lg{mutex_};
+        
+        timer_.tick();
 
         const auto poll_res = reactor_.poll();
 
@@ -90,6 +94,9 @@ void session::engine()
             // std::cout << "session poll timeout" << std::endl;
             // TODO: do stuff on timeout
         }
+
+        timer_.tock();
+
         notified_ = true;
         cv_.notify_one();
     }

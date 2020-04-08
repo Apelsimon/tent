@@ -17,17 +17,11 @@ tcp_socket::tcp_socket(const endpoint& ep) :
     fd_(socket(AF_INET, SOCK_STREAM, 0)),
     endpoint_(ep)
 {
+    // TODO: reasonable to do this on creation?
     if(!valid())
     {
         std::stringstream ss;
         ss << "Failed to create socket, errno: " << std::strerror(errno);
-        throw std::runtime_error{ss.str()};
-    }
-
-    if(!set_blocking(false))
-    {
-        std::stringstream ss;
-        ss << "Failed to set O_NONBLOCK, errno: " << std::strerror(errno);
         throw std::runtime_error{ss.str()};
     }
 }
@@ -35,10 +29,7 @@ tcp_socket::tcp_socket(const endpoint& ep) :
 
 tcp_socket::~tcp_socket()
 {
-    if(valid())
-    {
-        close();
-    }
+    close();
 }
 
 bool tcp_socket::bind()
@@ -86,8 +77,24 @@ ssize_t tcp_socket::read(byte_buffer& buffer)
 
 void tcp_socket::close()
 {
-    ::close(fd_);
-    fd_ = -1;
+    if(valid())
+    {
+        ::close(fd_);
+        fd_ = -1;
+    }
+}
+
+void tcp_socket::reset()
+{
+    close();
+
+    fd_ = socket(AF_INET, SOCK_STREAM, 0);
+    if(!valid())
+    {
+        std::stringstream ss;
+        ss << "Failed to create socket, errno: " << std::strerror(errno);
+        throw std::runtime_error{ss.str()};
+    }
 }
 
 }

@@ -2,6 +2,7 @@
 #define SESSION_HPP_
 
 #include "piece_handler.hpp"
+#include "timer.hpp"
 
 #include "libtorrent/torrent_info.hpp"
 
@@ -37,6 +38,7 @@ private:
     net_reactor& reactor_;
     std::unique_ptr<tracker_client> tracker_client_;
     std::vector<std::unique_ptr<torrent_agent>> agents_;
+    timer timer_;
 
     lt::torrent_info torrent_info_;
 

@@ -3,6 +3,7 @@
 
 #include "byte_buffer.hpp"
 #include "inet_reactor_client.hpp"
+#include "itimer_client.hpp"
 #include "session_sm.hpp"
 #include "tcp_socket.hpp"
 
@@ -19,12 +20,13 @@ class net_reactor;
 class peer_info;
 class piece_handler;
 class session;
+class timer;
 
-class torrent_agent : public inet_reactor_client, public ism_client 
+class torrent_agent : public inet_reactor_client, public ism_client, public itimer_client 
 {
 public:
     torrent_agent(session& session, net_reactor& reactor, lt::torrent_info& torrent_info, 
-        std::unique_ptr<peer_info> info, piece_handler& handler);
+        std::unique_ptr<peer_info> info, piece_handler& handler, timer& timer);
     ~torrent_agent();
 
     void read() override;
@@ -38,6 +40,8 @@ public:
     void choked() override;
     void unchoked() override;
     void disconnected() override;
+
+    void on_timeout() override;
 
     void execute();
     
@@ -55,11 +59,13 @@ private:
     byte_buffer io_buffer_;
     std::vector<uint8_t> msg_buffer_;
     piece_handler& piece_handler_;
+    timer& timer_;
 
     lt::torrent_info& torrent_info_;
 
     bool connected_;
     bool choked_;
+    int connection_attempts_;
 };
 
 }

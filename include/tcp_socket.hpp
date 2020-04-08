@@ -23,7 +23,8 @@ public:
     void close();
     bool valid() const { return fd_ != -1; }
     int fd() const { return fd_; }
-
+    void reset();
+    
 private:
     int fd_;
     endpoint endpoint_;

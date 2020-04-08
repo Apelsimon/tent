@@ -9,16 +9,10 @@ session_sm::session_sm(ism_client& client) :
     client_(client),
     state_(IDLE)
 {
-    client_.start();
 }
 
 void session_sm::on_event(session_event ev)
 {
-    if(state_ == DISCONNECTED)
-    {
-        return;
-    }
-
     switch (ev)
     {
     case session_event::START:

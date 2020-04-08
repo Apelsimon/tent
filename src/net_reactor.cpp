@@ -70,6 +70,7 @@ bool net_reactor::reg(inet_reactor_client& client, uint32_t events)
 
 bool net_reactor::unreg(inet_reactor_client& client)
 {
+    epoll_ctl(efd_, EPOLL_CTL_DEL, client.fd(), nullptr);
     return clients_.erase(client.fd()) > 0;
 }
 
