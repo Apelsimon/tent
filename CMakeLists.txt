@@ -7,6 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_subdirectory(curlpp)
 add_subdirectory(libtorrent)
+add_subdirectory(spdlog)
 add_subdirectory(test)
 
 set(SRC
@@ -16,6 +17,7 @@ set(SRC
     src/file_reader.cpp
     src/http_client.cpp
     src/http_messages.cpp
+    src/log_ctrl.cpp
     src/main.cpp
     src/msg_factory.cpp
     src/net.cpp
@@ -43,12 +45,17 @@ find_library( LIBTORRENT NAMES libtorrent-rasterbar.so
 
 find_package(Boost COMPONENTS system REQUIRED)
 
+if(NOT TARGET spdlog)
+    find_package(spdlog REQUIRED)
+endif()
+
 set(DEPENDENCIES
     ${LIBTORRENT}
     ${Boost_LIBRARIES}
     curlpp
     stdc++fs
     pthread
+    spdlog::spdlog
 )
 
 set(INCLUDES

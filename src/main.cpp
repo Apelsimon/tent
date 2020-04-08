@@ -1,4 +1,5 @@
 #include "file_reader.hpp"
+#include "log_ctrl.hpp"
 #include "net_reactor.hpp"
 #include "session.hpp"
 #include "signal_handler.hpp"
@@ -18,6 +19,8 @@ int main(int argc, char* argv[])
         std::cout << "usage: tent <torrent file>" << std::endl;
         return EXIT_FAILURE;
     }
+
+    tent::log_ctrl log_ctrl;
     
     auto begin = std::chrono::steady_clock::now();
 
