@@ -3,6 +3,7 @@
 
 #include "inet_reactor_client.hpp"
 
+#include <sys/epoll.h>
 #include <unordered_map>
 
 namespace tent
@@ -17,7 +18,7 @@ public:
     int poll();
     void stop();
     bool reg(inet_reactor_client& client, uint32_t events);
-    bool unreg(inet_reactor_client& client);
+    bool unreg(inet_reactor_client& client, uint32_t events = 0);
 
 private:
     int efd_;

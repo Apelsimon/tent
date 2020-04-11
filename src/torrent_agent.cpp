@@ -43,7 +43,7 @@ torrent_agent::torrent_agent(session& session, net_reactor& reactor,
     connection_attempts_(0)
 {
     socket_.set_blocking(false);
-    reactor_.reg(*this, EPOLLIN | EPOLLOUT);
+    reactor_.reg(*this, EPOLLIN);
     start();
 }
 
@@ -95,6 +95,7 @@ void torrent_agent::write()
             if(connected_)
             {
                 spdlog::info("Connect successful with peer: {}", peer_info_->to_string());
+                reactor_.unreg(*this, EPOLLOUT);
                 sm_.on_event(session_event::CONNECTED);
             }
             else 
@@ -111,6 +112,7 @@ void torrent_agent::write()
             send(msg);
             send_queue_.pop();
         }
+        reactor_.unreg(*this, EPOLLOUT);
     }
         
 }
@@ -128,17 +130,20 @@ void torrent_agent::connect()
     {
         spdlog::info("Connect successful with peer: {}", peer_info_->to_string());
         sm_.on_event(session_event::CONNECTED);
+        return;
     }
+
+    reactor_.reg(*this, EPOLLOUT);
 }
 
 void torrent_agent::handshake() 
 {
-    io_buffer_.reset();
-
     std::stringstream info_hash;
     info_hash << torrent_info_.info_hash();
+
     auto handshake = msg_factory::handshake(session_.peer_id(), info_hash.str());
     send_queue_.push(handshake);
+    reactor_.reg(*this, EPOLLOUT);
 
     spdlog::debug("Add handshake for peer {} to send queue", peer_info_->to_string());
 }
@@ -147,6 +152,7 @@ void torrent_agent::interested()
 {
     auto interested = msg_factory::interested();
     send_queue_.push(interested);
+    reactor_.reg(*this, EPOLLOUT);
 }
 
 void torrent_agent::choked()
@@ -183,7 +189,7 @@ void torrent_agent::on_timeout()
     socket_.reset();
     socket_.set_blocking(false);
     
-    reactor_.reg(*this, EPOLLIN | EPOLLOUT);
+    reactor_.reg(*this, EPOLLIN);
 
     spdlog::info("Reconnect with peer: {}", peer_info_->to_string());
     start();
@@ -250,11 +256,11 @@ void torrent_agent::handle_msg(message& msg)
         // TODO
         break;
     case message::id::CHOKE:
-        spdlog::info("Choked by peer: {}", peer_info_->to_string());
+        spdlog::debug("Choked by peer: {}", peer_info_->to_string());
         sm_.on_event(session_event::CHOKE);
         break;
     case message::id::UNCHOKE:
-        spdlog::info("Unchoked by peer: {}", peer_info_->to_string());
+        spdlog::debug("Unchoked by peer: {}", peer_info_->to_string());
         sm_.on_event(session_event::UNCHOKE);        
         break;
     case message::id::INTERESTED:
@@ -309,6 +315,10 @@ void torrent_agent::request_pieces()
             ++send_count;
         }
         
+        if(send_count > 0)
+        {
+            reactor_.reg(*this, EPOLLOUT);
+        }
     }
 }
 
