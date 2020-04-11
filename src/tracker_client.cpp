@@ -67,8 +67,7 @@ bool tracker_client::announce(uint16_t port, const std::string& peer_id,
             }
         }
     }
-
-    spdlog::info("Available peers: {}", received_peers.size());
+    spdlog::debug("Available peers: {}", received_peers.size());
     return !received_peers.empty();
 }
 

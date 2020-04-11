@@ -1,8 +1,9 @@
 #include "net_reactor.hpp"
 
+#include "spdlog/spdlog.h"
+
 #include <iostream>
 #include <sys/epoll.h>
-
 #include <cstring>
 
 namespace tent
@@ -53,7 +54,7 @@ bool net_reactor::reg(inet_reactor_client& client, uint32_t events)
     if(clients_.find(client.fd()) == clients_.end())
     {
         struct epoll_event ev;
-        ev.events = events | EPOLLET;
+        ev.events = events /*| EPOLLET*/;
         ev.data.fd = client.fd();
         if (epoll_ctl(efd_, EPOLL_CTL_ADD, client.fd(), &ev) == -1) 
         {

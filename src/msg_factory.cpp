@@ -24,6 +24,13 @@ void msg_factory::handshake(byte_buffer& buffer, const std::string& peer_id,
     buffer.write(reinterpret_cast<const uint8_t*>(peer_id.data()), 20);
 }
 
+byte_buffer msg_factory::handshake(const std::string& peer_id, const std::string& info_hash)
+{
+    byte_buffer bb;
+    handshake(bb, peer_id, info_hash);
+    return bb;
+}
+
 void msg_factory::keep_alive(byte_buffer& buffer)
 {
     buffer.write_32(0);
@@ -47,6 +54,13 @@ void msg_factory::interested(byte_buffer& buffer)
     buffer.write_8(message::id::INTERESTED);
 }
 
+byte_buffer msg_factory::interested()
+{
+    byte_buffer bb;
+    interested(bb);
+    return bb;
+}
+
 void msg_factory::not_interested(byte_buffer& buffer)
 {
     buffer.write_32(1);
@@ -60,6 +74,13 @@ void msg_factory::request(byte_buffer& buffer, const msg::request& req)
     buffer.write_32(req.index_);
     buffer.write_32(req.begin_);
     buffer.write_32(req.length_);
+}
+
+byte_buffer msg_factory::request(const msg::request& req)
+{
+    byte_buffer bb;
+    request(bb, req);
+    return bb;
 }
 
 void msg_factory::piece(byte_buffer& buffer, const msg::piece& piece)
@@ -79,6 +100,13 @@ void msg_factory::connect(byte_buffer& buffer, uint32_t transaction_id)
     buffer.write_64(CONNECTION_ID);
     buffer.write_32(CONNECT_ACTION);
     buffer.write_32(transaction_id);
+}
+
+byte_buffer msg_factory::connect(uint32_t transaction_id)
+{
+    byte_buffer bb;
+    connect(bb, transaction_id);
+    return bb;
 }
 
 void msg_factory::announce(byte_buffer& buffer, uint64_t connection_id, 

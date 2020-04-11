@@ -36,6 +36,7 @@ torrent_agent::torrent_agent(session& session, net_reactor& reactor,
     msg_buffer_(),
     piece_handler_(handler),
     timer_(timer),
+    send_queue_(),
     torrent_info_(torrent_info),
     connected_(false),
     choked_(true),
@@ -83,6 +84,7 @@ void torrent_agent::read()
 
 void torrent_agent::write()
 {
+    spdlog::debug("Ready for write, associated peer: {}, pending msgs: {}", peer_info_->to_string(), send_queue_.size());
     if(!connected_)
     {
         int error;
@@ -92,6 +94,7 @@ void torrent_agent::write()
             connected_ = error == 0; 
             if(connected_)
             {
+                spdlog::info("Connect successful with peer: {}", peer_info_->to_string());
                 sm_.on_event(session_event::CONNECTED);
             }
             else 
@@ -99,7 +102,17 @@ void torrent_agent::write()
                 disconnected();
             }
         }
-    }        
+    }
+    else
+    {
+        while(!send_queue_.empty())
+        {
+            auto& msg = send_queue_.front();
+            send(msg);
+            send_queue_.pop();
+        }
+    }
+        
 }
 
 void torrent_agent::start()
@@ -113,6 +126,7 @@ void torrent_agent::connect()
     ++connection_attempts_;
     if(connected_)
     {
+        spdlog::info("Connect successful with peer: {}", peer_info_->to_string());
         sm_.on_event(session_event::CONNECTED);
     }
 }
@@ -123,17 +137,16 @@ void torrent_agent::handshake()
 
     std::stringstream info_hash;
     info_hash << torrent_info_.info_hash();
-    msg_factory::handshake(io_buffer_, session_.peer_id(), info_hash.str());
+    auto handshake = msg_factory::handshake(session_.peer_id(), info_hash.str());
+    send_queue_.push(handshake);
 
-    send(); 
+    spdlog::debug("Add handshake for peer {} to send queue", peer_info_->to_string());
 }
 
 void torrent_agent::interested()
 {
-    io_buffer_.reset();
-    msg_factory::interested(io_buffer_);
-
-    send();
+    auto interested = msg_factory::interested();
+    send_queue_.push(interested);
 }
 
 void torrent_agent::choked()
@@ -163,6 +176,9 @@ void torrent_agent::disconnected()
 void torrent_agent::on_timeout() 
 {
     timer_.unreg(*this);
+
+    send_queue empty;
+    std::swap(send_queue_, empty);
 
     socket_.reset();
     socket_.set_blocking(false);
@@ -208,15 +224,15 @@ void torrent_agent::on_read(const byte_buffer& buffer)
     }
 }
 
-void torrent_agent::send()
+void torrent_agent::send(byte_buffer& buffer)
 {
     errno = 0;
-    while(connected_ && io_buffer_.read_available() > 0 && !errno)
+    while(connected_ && buffer.read_available() > 0 && !errno)
     {
-        const auto res = socket_.write(io_buffer_);
+        const auto res = socket_.write(buffer);
         if(res > 0)
         {
-            io_buffer_.inc_read(res);
+            buffer.inc_read(res);
         }
     }
 
@@ -287,10 +303,9 @@ void torrent_agent::request_pieces()
                 break;
             }
             
-            io_buffer_.reset();
-            msg_factory::request(io_buffer_, result.second);
-            send();
-            
+            auto request = msg_factory::request(result.second);
+            send_queue_.push(request);
+
             ++send_count;
         }
         

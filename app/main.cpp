@@ -21,7 +21,7 @@ int main(int argc, char* argv[])
         spdlog::get("console")->info( "usage: tent <torrent file>");
         return EXIT_FAILURE;
     }
-    
+
     auto begin = std::chrono::steady_clock::now();
 
     tent::signal_handler::init();

@@ -1,5 +1,6 @@
 #include "udp_tracker_client.hpp"
 
+#include "log_ctrl.hpp"
 #include "msg_factory.hpp"
 #include "net.hpp"
 #include "net_reactor.hpp"
@@ -29,7 +30,7 @@ udp_tracker_client::udp_tracker_client(const lt::torrent_info& info, const std::
     ss <<  info_.info_hash();
     info_hash_ = ss.str();
 
-    reactor_.reg(*this, EPOLLIN | EPOLLOUT);
+    reactor_.reg(*this, EPOLLIN);
 }
 
 udp_tracker_client::~udp_tracker_client()

@@ -10,6 +10,7 @@
 #include "libtorrent/torrent_info.hpp"
 
 #include <memory>
+#include <queue>
 #include <vector>
 
 namespace tent 
@@ -21,6 +22,8 @@ class peer_info;
 class piece_handler;
 class session;
 class timer;
+
+using send_queue = std::queue<byte_buffer>;
 
 class torrent_agent : public inet_reactor_client, public ism_client, public itimer_client 
 {
@@ -47,7 +50,7 @@ public:
     
 private:
     void on_read(const byte_buffer& buffer);
-    void send();
+    void send(byte_buffer& buffer);
     void handle_msg(message& msg);
     void request_pieces();
 
@@ -60,6 +63,7 @@ private:
     std::vector<uint8_t> msg_buffer_;
     piece_handler& piece_handler_;
     timer& timer_;
+    send_queue send_queue_;
 
     lt::torrent_info& torrent_info_;
 
