@@ -14,13 +14,13 @@
 
 int main(int argc, char* argv[])
 {
+    tent::log_ctrl log_ctrl;
+
     if(argc < 2)
     {
-        std::cout << "usage: tent <torrent file>" << std::endl;
+        spdlog::get("console")->info( "usage: tent <torrent file>");
         return EXIT_FAILURE;
     }
-
-    tent::log_ctrl log_ctrl;
     
     auto begin = std::chrono::steady_clock::now();
 
@@ -34,7 +34,7 @@ int main(int argc, char* argv[])
     
     if(error.value() != 0)
     {
-        std::cerr << "Failed to read torrent: " << error.message() << std::endl;
+        spdlog::get("console")->error("Failed to read torrent: {}", error.message());
         return EXIT_FAILURE;
     }
 
@@ -44,7 +44,7 @@ int main(int argc, char* argv[])
     session.start();
 
     auto end = std::chrono::steady_clock::now();
-    std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::seconds>(end - begin).count() << "[s]" << std::endl;
+    spdlog::get("console")->info("Time difference: {}[s]", std::chrono::duration_cast<std::chrono::seconds>(end - begin).count());
 
     return EXIT_SUCCESS;
 }

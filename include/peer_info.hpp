@@ -17,6 +17,8 @@ public:
         endpoint_(ip, port)
     {}
 
+    std::string to_string() const;
+
     std::string id_;
     endpoint endpoint_;
 };

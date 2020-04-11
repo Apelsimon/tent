@@ -1,5 +1,6 @@
 #include "session.hpp"
 
+#include "log_ctrl.hpp"
 #include "net_reactor.hpp"
 #include "torrent_agent.hpp"
 #include "peer_info.hpp"
@@ -38,7 +39,7 @@ void session::start()
     std::vector<std::unique_ptr<peer_info>> received_peers;
     if(!tracker_client_->announce(PORT, local_peer_id_, received_peers))
     {
-        std::cerr << "Failed to announce to tracker" << std::endl;
+        spdlog::get("console")->error("Failed to announce to tracker");
         return;
     }
 
@@ -51,6 +52,8 @@ void session::start()
 
     running_ = true;
     std::string progress_str{""};
+
+    spdlog::get("console")->info("Start session");
 
     std::thread engine_thread{&session::engine, this};
     std::unique_lock<std::mutex> lock(mutex_);

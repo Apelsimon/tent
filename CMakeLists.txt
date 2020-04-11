@@ -67,7 +67,7 @@ set(INCLUDES
 # tent exe
 add_executable(${PROJECT_NAME} ${SRC})
 target_include_directories(${PROJECT_NAME} PUBLIC ${INCLUDES})
-target_link_libraries(${PROJECT_NAME} ${DEPENDENCIES})
+target_link_libraries(${PROJECT_NAME} PRIVATE ${DEPENDENCIES})
 target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -pedantic -Werror)
 
 # tent lib

@@ -10,6 +10,8 @@
 #include "udp_socket.hpp"
 #include "udp_tracker_client.hpp"
 
+#include "spdlog/spdlog.h"
+
 static std::string percent_encode(const lt::sha1_hash& hash, ssize_t num = 2, char separator = '%');
 static void parse_peers(std::vector<std::unique_ptr<tent::peer_info>>& peers, const std::string& tracker_rsp);
 
@@ -30,7 +32,7 @@ bool tracker_client::announce(uint16_t port, const std::string& peer_id,
 {
     if(torrent_info_.trackers().empty())
     {
-        std::cout << "No trackers available" << std::endl;
+        spdlog::info("No trackers available");
         return false;
     }
 
@@ -65,7 +67,8 @@ bool tracker_client::announce(uint16_t port, const std::string& peer_id,
             }
         }
     }
-    std::cout << "available peers: " << received_peers.size() << std::endl;
+
+    spdlog::info("Available peers: {}", received_peers.size());
     return !received_peers.empty();
 }
 
@@ -92,14 +95,14 @@ void parse_peers(std::vector<std::unique_ptr<tent::peer_info>>& peers, const std
     
     if(error.value() != 0)
     {
-        std::cerr << "Failed to decode: '" << error.message() << std::endl;
+        spdlog::error("Failed to decode: '{}'", error.message());
         return;
     }
 
     auto peer_list = decoded.dict_find_list("peers");
     if(peer_list.type() != lt::bdecode_node::list_t)
     {
-        std::cerr << "Couldn't find peer list" << std::endl;
+        spdlog::error("Couldn't find peer list", error.message());
         return;
     }
 

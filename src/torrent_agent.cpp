@@ -9,12 +9,13 @@
 #include "session.hpp"
 #include "timer.hpp"
 
-#include <sys/epoll.h>
+#include "spdlog/spdlog.h"
 
 #include <algorithm>
-// #include <iostream> // TODO: log to file
-#include <sstream>
 #include <cstring>
+#include <sstream>
+#include <sys/epoll.h>
+
 
 static size_t get_msg_len(const std::vector<uint8_t>& buffer, bool handshake_received);
 static bool set_peer_id_and_validate_handshake(const tent::byte_buffer& msg, tent::peer_info& peer_info);
@@ -64,14 +65,14 @@ void torrent_agent::read()
         }
         else if(res == 0)
         {
-            // std::cout << "Disconnected with " << *peer_info_ << std::endl;
+            spdlog::info("Disconnected with peer: {}", peer_info_->to_string());
             sm_.on_event(session_event::DISCONNECTED);
         }        
     }
 
     if(errno && errno != EAGAIN && errno != EWOULDBLOCK)
     {
-        // std::cerr << "read error: " << std::strerror(errno) << std::endl;
+        spdlog::error("Read error: {}", std::strerror(errno));
     }
 
     if(io_buffer_.read_available() > 0)
@@ -108,8 +109,8 @@ void torrent_agent::start()
 
 void torrent_agent::connect()
 {
-    ++connection_attempts_;
     connected_ = socket_.connect(peer_info_->endpoint_);
+    ++connection_attempts_;
     if(connected_)
     {
         sm_.on_event(session_event::CONNECTED);
@@ -148,7 +149,7 @@ void torrent_agent::unchoked()
 
 void torrent_agent::disconnected()
 {
-    // std::cout << "torrent agent disconnected with peer " << *peer_info_ << std::endl;
+    spdlog::info("Disconnected with peer: {}", peer_info_->to_string());
 
     reactor_.unreg(*this);
     socket_.close();
@@ -161,14 +162,14 @@ void torrent_agent::disconnected()
 
 void torrent_agent::on_timeout() 
 {
-    // std::cout << "Reconnect socket to peer: " << *peer_info_ << ", attempts: " << reconnect_attempts_ << std::endl;
     timer_.unreg(*this);
 
     socket_.reset();
     socket_.set_blocking(false);
-    // std::cout << "try to reg socket with fd: " << socket_.fd() << std::endl;
+    
     reactor_.reg(*this, EPOLLIN | EPOLLOUT);
 
+    spdlog::info("Reconnect with peer: {}", peer_info_->to_string());
     start();
 }
 
@@ -221,7 +222,7 @@ void torrent_agent::send()
 
     if(errno && errno != EAGAIN && errno != EWOULDBLOCK)
     {
-        // std::cerr << "write error: " << std::strerror(errno) << std::endl;
+        spdlog::error("Write error: {}", std::strerror(errno));
     }
 }
 
@@ -233,11 +234,11 @@ void torrent_agent::handle_msg(message& msg)
         // TODO
         break;
     case message::id::CHOKE:
-        // std::cout << "Choked by peer: " << *peer_info_ << std::endl;
+        spdlog::info("Choked by peer: {}", peer_info_->to_string());
         sm_.on_event(session_event::CHOKE);
         break;
     case message::id::UNCHOKE:
-        // std::cout << "Unchoked by peer: " << *peer_info_ << std::endl;
+        spdlog::info("Unchoked by peer: {}", peer_info_->to_string());
         sm_.on_event(session_event::UNCHOKE);        
         break;
     case message::id::INTERESTED:
@@ -266,7 +267,7 @@ void torrent_agent::handle_msg(message& msg)
         // TODO
         break;
     default:
-        // std::cerr << "Unknow message id" << std::endl;  
+        spdlog::error("Unknown message id: {}", msg.id_); 
         break;
     }
 }
