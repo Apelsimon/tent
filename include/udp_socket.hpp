@@ -23,7 +23,6 @@ public:
 
 private:
     int fd_;
-    endpoint endpoint_;
 };
 
 } // namespace tent

@@ -11,10 +11,10 @@ class byte_buffer;
 class tcp_socket
 {
 public:
-    tcp_socket(const endpoint& ep);
+    tcp_socket();
     ~tcp_socket();
 
-    bool bind();
+    bool bind(const endpoint& ep);
     bool connect(const endpoint& ep);
     bool set_blocking(bool block);
     bool getsockopt(int level, int optname, void *optval, socklen_t *optlen);
@@ -27,7 +27,6 @@ public:
     
 private:
     int fd_;
-    endpoint endpoint_;
 };
 
 

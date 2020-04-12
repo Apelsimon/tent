@@ -13,9 +13,8 @@
 namespace tent
 {
 
-tcp_socket::tcp_socket(const endpoint& ep) : 
-    fd_(socket(AF_INET, SOCK_STREAM, 0)),
-    endpoint_(ep)
+tcp_socket::tcp_socket() : 
+    fd_(socket(AF_INET, SOCK_STREAM, 0))
 {
     // TODO: reasonable to do this on creation?
     if(!valid())
@@ -32,9 +31,9 @@ tcp_socket::~tcp_socket()
     close();
 }
 
-bool tcp_socket::bind()
+bool tcp_socket::bind(const endpoint& ep)
 {
-    auto sockaddr = endpoint_.sockaddr();
+    auto sockaddr = ep.sockaddr();
     auto addrlen = sockaddr->sa_family == AF_INET ? sizeof(struct sockaddr_in) :
         sizeof(struct sockaddr_in6);
     return ::bind(fd_, sockaddr, addrlen) == 0;
@@ -67,12 +66,22 @@ bool tcp_socket::getsockopt(int level, int optname, void *optval, socklen_t *opt
 
 ssize_t tcp_socket::write(byte_buffer& buffer)
 {
-    return ::write(fd_, buffer.get_read(), buffer.read_available());
+    const auto res =  ::write(fd_, buffer.get_read(), buffer.read_available());
+    if(res > 0)
+    {
+        buffer.inc_read(res);
+    }
+    return res;
 }
 
 ssize_t tcp_socket::read(byte_buffer& buffer)
 {
-    return ::read(fd_, buffer.get_write(), buffer.write_available());;
+    const auto res = ::read(fd_, buffer.get_write(), buffer.write_available());
+    if(res > 0)
+    {
+        buffer.inc_write(res);
+    }
+    return res;
 }
 
 void tcp_socket::close()

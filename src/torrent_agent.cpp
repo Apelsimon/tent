@@ -30,7 +30,7 @@ torrent_agent::torrent_agent(session& session, net_reactor& reactor,
     session_(session),
     reactor_(reactor),
     peer_info_(std::move(info)),
-    socket_(endpoint{"0.0.0.0", 0}),
+    socket_(),
     sm_(*this),
     io_buffer_(1 << 15),
     msg_buffer_(),
@@ -57,16 +57,12 @@ void torrent_agent::read()
     io_buffer_.reset();
     
     const auto res = socket_.read(io_buffer_);
-    if(res > 0)
-    {
-        io_buffer_.inc_write(res);
-    }
-    else if(res == 0)
+    if(res == 0)
     {
         spdlog::info("Disconnected with peer: {}", peer_info_->to_string());
         sm_.on_event(session_event::DISCONNECTED);
     }        
-    else
+    else if(res < 0)
     {
         if(errno != EAGAIN && errno != EWOULDBLOCK)
         {
@@ -238,11 +234,7 @@ bool torrent_agent::send(byte_buffer& buffer)
     while(buffer.read_available() > 0)
     {
         const auto res = socket_.write(buffer);
-        if(res > 0)
-        {
-            buffer.inc_read(res);
-        }
-        else if(res < 0)
+        if(res < 0)
         {
             if(errno != EAGAIN && errno != EWOULDBLOCK)
             {

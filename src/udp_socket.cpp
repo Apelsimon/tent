@@ -10,8 +10,7 @@ namespace tent
 {
 
 udp_socket::udp_socket() :
-    fd_(socket(AF_INET, SOCK_DGRAM, 0)),
-    endpoint_()
+    fd_(socket(AF_INET, SOCK_DGRAM, 0))
 {
     if(!valid())
     {
