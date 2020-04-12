@@ -5,6 +5,7 @@
 #include "http_client.hpp"
 #include "http_messages.hpp"
 #include "msg_factory.hpp"
+#include "net.hpp"
 #include "peer_info.hpp"
 #include "random.hpp"
 #include "udp_socket.hpp"
@@ -40,7 +41,7 @@ bool tracker_client::announce(uint16_t port, const std::string& peer_id,
 
     http::client http_client;
     udp_tracker_client udp_tracker{torrent_info_, peer_id, port, received_peers};
-
+    
     for(auto& tracker : torrent_info_.trackers())
     {
         if(tracker.url.find("udp") != std::string::npos)
@@ -99,30 +100,58 @@ void parse_peers(std::vector<std::unique_ptr<tent::peer_info>>& peers, const std
     }
 
     auto peer_list = decoded.dict_find_list("peers");
-    if(peer_list.type() != lt::bdecode_node::list_t)
+    auto peer_string_node = decoded.dict_find_string("peers");
+    
+    if(peer_list.type() != lt::bdecode_node::list_t && 
+        peer_string_node.type() != lt::bdecode_node::string_t)
     {
-        spdlog::error("Couldn't find peer list", error.message());
+        spdlog::error("Couldn't find peer list or string {}", 
+            error.message());
         return;
     }
 
-    for(auto i = 0; i < peer_list.list_size(); ++i)
+    auto find_peer_it = [&peers](const std::string& peer_ip, uint16_t peer_port) {
+        return std::find_if(peers.begin(), peers.end(), [&peer_ip, peer_port](const auto& peer){
+                auto addr = reinterpret_cast<sockaddr_in*>(peer->endpoint_.sockaddr());
+                char ipstr[INET_ADDRSTRLEN];
+                inet_ntop(AF_INET, &addr->sin_addr, ipstr, INET_ADDRSTRLEN); // TODO: support IPv6
+                return std::string{ipstr} == peer_ip && ntohs(addr->sin_port) == peer_port;
+            });
+    };
+
+    if(peer_list.type() == lt::bdecode_node::list_t)
     {
-        const auto peer_dict = peer_list.list_at(i);
-        const auto id = std::string{peer_dict.dict_find_string_value("peer id")};
-        const auto peer_ip = std::string{peer_dict.dict_find_string_value("ip")};
-        const auto peer_port = peer_dict.dict_find_int_value("port");
-
-
-        auto it = std::find_if(peers.begin(), peers.end(), [&peer_ip, peer_port](const auto& peer){
-            auto addr = reinterpret_cast<sockaddr_in*>(peer->endpoint_.sockaddr());
-            char ipstr[INET_ADDRSTRLEN];
-            inet_ntop(AF_INET, &addr->sin_addr, ipstr, INET_ADDRSTRLEN); // TODO: support IPv6
-            return std::string{ipstr} == peer_ip && ntohs(addr->sin_port) == peer_port;
-        });
-
-        if(it == peers.end())
+        for(auto i = 0; i < peer_list.list_size(); ++i)
         {
-            peers.push_back(std::make_unique<tent::peer_info>(id, peer_ip, peer_port));
+            const auto peer_dict = peer_list.list_at(i);
+            const auto id = std::string{peer_dict.dict_find_string_value("peer id")};
+            const auto peer_ip = std::string{peer_dict.dict_find_string_value("ip")};
+            const auto peer_port = peer_dict.dict_find_int_value("port");
+
+            auto it = find_peer_it(peer_ip, peer_port);
+
+            if(it == peers.end())
+            {
+                peers.push_back(std::make_unique<tent::peer_info>(id, peer_ip, peer_port));
+            }
         }
     }
+    else if(peer_string_node.type() == lt::bdecode_node::string_t)
+    {
+        auto peer_string = std::string{peer_string_node.string_value()};
+        for(size_t offset = 0; offset < peer_string.size(); offset += 6)
+        {
+            auto peer_ip = tent::net::saddr_to_str(ntohl(*reinterpret_cast<const uint32_t*>(peer_string.data() + offset)));
+            auto peer_port = ntohs(*reinterpret_cast<const uint16_t*>(peer_string.data() + offset + 4));
+            
+            auto it = find_peer_it(peer_ip, peer_port);
+
+            if(it == peers.end())
+            {
+                peers.push_back(std::make_unique<tent::peer_info>("", peer_ip, peer_port)); // empty peer id for now, will be set on handshake??
+            }
+        }
+    }
+
+    
 }

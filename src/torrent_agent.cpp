@@ -56,24 +56,22 @@ void torrent_agent::read()
 {
     io_buffer_.reset();
     
-    errno = 0;
-    while(connected_ && io_buffer_.write_available() > 0 && !errno)
+    const auto res = socket_.read(io_buffer_);
+    if(res > 0)
     {
-        const auto res = socket_.read(io_buffer_);
-        if(res > 0)
-        {
-            io_buffer_.inc_write(res);
-        }
-        else if(res == 0)
-        {
-            spdlog::info("Disconnected with peer: {}", peer_info_->to_string());
-            sm_.on_event(session_event::DISCONNECTED);
-        }        
+        io_buffer_.inc_write(res);
     }
-
-    if(errno && errno != EAGAIN && errno != EWOULDBLOCK)
+    else if(res == 0)
     {
-        spdlog::error("Read error: {}", std::strerror(errno));
+        spdlog::info("Disconnected with peer: {}", peer_info_->to_string());
+        sm_.on_event(session_event::DISCONNECTED);
+    }        
+    else
+    {
+        if(errno != EAGAIN && errno != EWOULDBLOCK)
+        {
+            spdlog::error("Read error: {}", std::strerror(errno));
+        }
     }
 
     if(io_buffer_.read_available() > 0)
@@ -84,7 +82,6 @@ void torrent_agent::read()
 
 void torrent_agent::write()
 {
-    spdlog::debug("Ready for write, associated peer: {}, pending msgs: {}", peer_info_->to_string(), send_queue_.size());
     if(!connected_)
     {
         int error;
@@ -109,8 +106,13 @@ void torrent_agent::write()
         while(!send_queue_.empty())
         {
             auto& msg = send_queue_.front();
-            send(msg);
+            const auto success = send(msg);
             send_queue_.pop();
+
+            if(!success)
+            {
+                return;
+            }
         }
         reactor_.unreg(*this, EPOLLOUT);
     }
@@ -230,22 +232,26 @@ void torrent_agent::on_read(const byte_buffer& buffer)
     }
 }
 
-void torrent_agent::send(byte_buffer& buffer)
+bool torrent_agent::send(byte_buffer& buffer)
 {
     errno = 0;
-    while(connected_ && buffer.read_available() > 0 && !errno)
+    while(buffer.read_available() > 0)
     {
         const auto res = socket_.write(buffer);
         if(res > 0)
         {
             buffer.inc_read(res);
         }
+        else if(res < 0)
+        {
+            if(errno != EAGAIN && errno != EWOULDBLOCK)
+            {
+                spdlog::error("Write error: {}", std::strerror(errno));
+            }
+            return false;
+        }
     }
-
-    if(errno && errno != EAGAIN && errno != EWOULDBLOCK)
-    {
-        spdlog::error("Write error: {}", std::strerror(errno));
-    }
+    return true;
 }
 
 void torrent_agent::handle_msg(message& msg)

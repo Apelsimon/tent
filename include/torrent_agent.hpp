@@ -50,7 +50,7 @@ public:
     
 private:
     void on_read(const byte_buffer& buffer);
-    void send(byte_buffer& buffer);
+    bool send(byte_buffer& buffer);
     void handle_msg(message& msg);
     void request_pieces();
 
