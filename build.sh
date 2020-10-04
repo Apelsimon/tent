@@ -5,8 +5,8 @@ LIBTORRENT_BUILD_DIR=libtorrent/build
 BUILD_DIR=build
 
 # TODO: parse input
-# rm -rf libtorrent/build 
-# rm -rf build
+rm -rf libtorrent/build 
+rm -rf build
 
 if [ ! -d "$LIBTORRET_BUILD_DIR" ]; then 
     mkdir "$LIBTORRET_BUILD_DIR"

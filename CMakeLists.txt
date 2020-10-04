@@ -8,7 +8,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_subdirectory(curlpp)
 add_subdirectory(libtorrent)
 add_subdirectory(spdlog)
-add_subdirectory(test)
+# add_subdirectory(test)
 
 set(SRC
     src/byte_buffer.cpp
@@ -60,6 +60,7 @@ set(DEPENDENCIES
 set(INCLUDES
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/libtorrent/include
+    ${PROJECT_SOURCE_DIR}/curlpp/include
     ${Boost_INCLUDE_DIRS}
 )
 
