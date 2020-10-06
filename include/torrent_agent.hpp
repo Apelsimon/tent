@@ -1,13 +1,14 @@
 #ifndef NET_REACTOR_CLIENT_HPP_
 #define NET_REACTOR_CLIENT_HPP_
 
-#include "byte_buffer.hpp"
 #include "inet_reactor_client.hpp"
 #include "itimer_client.hpp"
 #include "session_sm.hpp"
 #include "tcp_socket.hpp"
 
 #include "libtorrent/torrent_info.hpp"
+
+#include "mul/byte_buffer.hpp"
 
 #include <memory>
 #include <queue>
@@ -23,7 +24,7 @@ class piece_handler;
 class session;
 class timer;
 
-using send_queue = std::queue<byte_buffer>;
+using send_queue = std::queue<mul::byte_buffer>;
 
 class torrent_agent : public inet_reactor_client, public ism_client, public itimer_client 
 {
@@ -49,8 +50,8 @@ public:
     void execute();
     
 private:
-    void on_read(const byte_buffer& buffer);
-    bool send(byte_buffer& buffer);
+    void on_read(const mul::byte_buffer& buffer);
+    bool send(mul::byte_buffer& buffer);
     void handle_msg(message& msg);
     void request_pieces();
 
@@ -59,7 +60,7 @@ private:
     std::unique_ptr<peer_info> peer_info_;
     tcp_socket socket_;
     session_sm sm_;
-    byte_buffer io_buffer_;
+    mul::byte_buffer io_buffer_;
     std::vector<uint8_t> msg_buffer_;
     piece_handler& piece_handler_;
     timer& timer_;

@@ -5,13 +5,10 @@ project(tent)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_subdirectory(curlpp)
-add_subdirectory(libtorrent)
-add_subdirectory(spdlog)
+add_subdirectory(extern)
 # add_subdirectory(test)
 
 set(SRC
-    src/byte_buffer.cpp
     src/endpoint.cpp
     src/file_handler.cpp
     src/file_reader.cpp
@@ -38,7 +35,7 @@ set(SRC
 # dependencies 
 find_library( LIBTORRENT NAMES libtorrent-rasterbar.so
     PATHS
-        ${PROJECT_SOURCE_DIR}/libtorrent/build    
+        ${PROJECT_SOURCE_DIR}/extern/libtorrent/build    
     REQUIRED 
 )
 
@@ -52,15 +49,17 @@ set(DEPENDENCIES
     ${LIBTORRENT}
     ${Boost_LIBRARIES}
     curlpp
-    stdc++fs
+    mul
     pthread
     spdlog::spdlog
+    stdc++fs
 )
 
 set(INCLUDES
     ${PROJECT_SOURCE_DIR}/include
-    ${PROJECT_SOURCE_DIR}/libtorrent/include
-    ${PROJECT_SOURCE_DIR}/curlpp/include
+    ${PROJECT_SOURCE_DIR}/extern/curlpp/include
+    ${PROJECT_SOURCE_DIR}/extern/libtorrent/include
+    ${PROJECT_SOURCE_DIR}/extern/mul/include
     ${Boost_INCLUDE_DIRS}
 )
 
@@ -71,9 +70,9 @@ target_link_libraries(${PROJECT_NAME} PRIVATE ${DEPENDENCIES})
 target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -pedantic -Werror)
 
 # tent lib
-add_library(${PROJECT_NAME}_ STATIC ${SRC})
-target_include_directories(${PROJECT_NAME}_ PUBLIC ${INCLUDES})
-target_link_libraries(${PROJECT_NAME}_ ${DEPENDENCIES})
-target_compile_options(${PROJECT_NAME}_ PRIVATE -Wall -Wextra -pedantic -Werror)
+# add_library(${PROJECT_NAME}_ STATIC ${SRC})
+# target_include_directories(${PROJECT_NAME}_ PUBLIC ${INCLUDES})
+# target_link_libraries(${PROJECT_NAME}_ ${DEPENDENCIES})
+# target_compile_options(${PROJECT_NAME}_ PRIVATE -Wall -Wextra -pedantic -Werror)
 
 

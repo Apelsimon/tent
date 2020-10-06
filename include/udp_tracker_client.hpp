@@ -1,13 +1,14 @@
 #ifndef UDP_TRACKER_CLIENT_HPP_
 #define UDP_TRACKER_CLIENT_HPP_
 
-#include "byte_buffer.hpp"
 #include "endpoint.hpp"
 #include "inet_reactor_client.hpp"
 #include "net_reactor.hpp"
 #include "udp_socket.hpp"
 
 #include "libtorrent/torrent_info.hpp"
+
+#include "mul/byte_buffer.hpp"
 
 #include <string>
 
@@ -30,7 +31,7 @@ public:
     bool announce(const std::string& url);
 
 private:
-    byte_buffer buffer_;
+    mul::byte_buffer buffer_;
     endpoint current_tracker_ep_;
     net_reactor reactor_;
     std::vector<std::unique_ptr<peer_info>>& received_peers_;

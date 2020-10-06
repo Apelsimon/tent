@@ -7,3 +7,6 @@
 [submodule "spdlog"]
 	path = spdlog
 	url = https://github.com/gabime/spdlog.git
+[submodule "extern/mul"]
+	path = extern/mul
+	url = git@github.com:Apelsimon/mul.git

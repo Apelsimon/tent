@@ -1,18 +1,19 @@
 #include "msg_factory.hpp"
 
 #include "bittorrent_protocol.hpp"
-#include "byte_buffer.hpp"
 #include "message.hpp"
 #include "messages.hpp"
 #include "peer_info.hpp"
 #include "pieces.hpp"
+
+#include "mul/byte_buffer.hpp"
 
 static std::vector<uint8_t> hex_str_to_byte_buff(const std::string& hex);
 
 namespace tent
 {
 
-void msg_factory::handshake(byte_buffer& buffer, const std::string& peer_id, 
+void msg_factory::handshake(mul::byte_buffer& buffer, const std::string& peer_id, 
     const std::string& info_hash)
 {
     const uint8_t STR_LEN = protocol::V1.size();
@@ -24,50 +25,50 @@ void msg_factory::handshake(byte_buffer& buffer, const std::string& peer_id,
     buffer.write(reinterpret_cast<const uint8_t*>(peer_id.data()), 20);
 }
 
-byte_buffer msg_factory::handshake(const std::string& peer_id, const std::string& info_hash)
+mul::byte_buffer msg_factory::handshake(const std::string& peer_id, const std::string& info_hash)
 {
-    byte_buffer bb;
+    mul::byte_buffer bb;
     handshake(bb, peer_id, info_hash);
     return bb;
 }
 
-void msg_factory::keep_alive(byte_buffer& buffer)
+void msg_factory::keep_alive(mul::byte_buffer& buffer)
 {
     buffer.write_32(0);
 }
 
-void msg_factory::choke(byte_buffer& buffer)
+void msg_factory::choke(mul::byte_buffer& buffer)
 {
     buffer.write_32(1);
     buffer.write_8(message::id::CHOKE);
 }
 
-void msg_factory::unchoke(byte_buffer& buffer)
+void msg_factory::unchoke(mul::byte_buffer& buffer)
 {
     buffer.write_32(1);
     buffer.write_8(message::id::UNCHOKE);
 }
 
-void msg_factory::interested(byte_buffer& buffer)
+void msg_factory::interested(mul::byte_buffer& buffer)
 {
     buffer.write_32(1);
     buffer.write_8(message::id::INTERESTED);
 }
 
-byte_buffer msg_factory::interested()
+mul::byte_buffer msg_factory::interested()
 {
-    byte_buffer bb;
+    mul::byte_buffer bb;
     interested(bb);
     return bb;
 }
 
-void msg_factory::not_interested(byte_buffer& buffer)
+void msg_factory::not_interested(mul::byte_buffer& buffer)
 {
     buffer.write_32(1);
     buffer.write_8(message::id::NOT_INTERESTED);
 }
 
-void msg_factory::request(byte_buffer& buffer, const msg::request& req)
+void msg_factory::request(mul::byte_buffer& buffer, const msg::request& req)
 {
     buffer.write_32(13);
     buffer.write_8(message::id::REQUEST);
@@ -76,23 +77,23 @@ void msg_factory::request(byte_buffer& buffer, const msg::request& req)
     buffer.write_32(req.length_);
 }
 
-byte_buffer msg_factory::request(const msg::request& req)
+mul::byte_buffer msg_factory::request(const msg::request& req)
 {
-    byte_buffer bb;
+    mul::byte_buffer bb;
     request(bb, req);
     return bb;
 }
 
-void msg_factory::piece(byte_buffer& buffer, const msg::piece& piece)
+void msg_factory::piece(mul::byte_buffer& buffer, const msg::piece& piece)
 {
-    buffer.write_32(9 + piece.block_.read_available());
+    buffer.write_32(9 + piece.block_.get_read_available());
     buffer.write_8(message::id::PIECE);
     buffer.write_32(piece.index_);
     buffer.write_32(piece.begin_);
-    buffer.write(piece.block_.get_read(), piece.block_.read_available());
+    buffer.write(piece.block_.get_read(), piece.block_.get_read_available());
 }
 
-void msg_factory::connect(byte_buffer& buffer, uint32_t transaction_id)
+void msg_factory::connect(mul::byte_buffer& buffer, uint32_t transaction_id)
 {
     constexpr uint64_t CONNECTION_ID = 0x41727101980;
     constexpr uint32_t CONNECT_ACTION = 0; // TODO: replace with action enum
@@ -102,14 +103,14 @@ void msg_factory::connect(byte_buffer& buffer, uint32_t transaction_id)
     buffer.write_32(transaction_id);
 }
 
-byte_buffer msg_factory::connect(uint32_t transaction_id)
+mul::byte_buffer msg_factory::connect(uint32_t transaction_id)
 {
-    byte_buffer bb;
+    mul::byte_buffer bb;
     connect(bb, transaction_id);
     return bb;
 }
 
-void msg_factory::announce(byte_buffer& buffer, uint64_t connection_id, 
+void msg_factory::announce(mul::byte_buffer& buffer, uint64_t connection_id, 
         uint32_t transaction_id, const std::string& info_hash, 
         const std::string& peer_id, uint64_t left, uint32_t key, uint16_t port)
 { 

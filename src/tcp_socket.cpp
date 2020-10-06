@@ -1,6 +1,6 @@
 #include "tcp_socket.hpp"
 
-#include "byte_buffer.hpp"
+#include "mul/byte_buffer.hpp"
 
 #include <cstring>
 #include <fcntl.h>
@@ -64,9 +64,9 @@ bool tcp_socket::getsockopt(int level, int optname, void *optval, socklen_t *opt
     return ::getsockopt(fd_, level, optname, optval, optlen) == 0;
 }
 
-ssize_t tcp_socket::write(byte_buffer& buffer)
+ssize_t tcp_socket::write(mul::byte_buffer& buffer)
 {
-    const auto res =  ::write(fd_, buffer.get_read(), buffer.read_available());
+    const auto res =  ::write(fd_, buffer.get_read(), buffer.get_read_available());
     if(res > 0)
     {
         buffer.inc_read(res);
@@ -74,9 +74,9 @@ ssize_t tcp_socket::write(byte_buffer& buffer)
     return res;
 }
 
-ssize_t tcp_socket::read(byte_buffer& buffer)
+ssize_t tcp_socket::read(mul::byte_buffer& buffer)
 {
-    const auto res = ::read(fd_, buffer.get_write(), buffer.write_available());
+    const auto res = ::read(fd_, buffer.get_write(), buffer.get_write_available());
     if(res > 0)
     {
         buffer.inc_write(res);

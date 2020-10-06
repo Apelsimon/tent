@@ -3,10 +3,14 @@
 
 #include "libtorrent/torrent_info.hpp"
 
+namespace mul
+{
+    class byte_buffer;
+}
+
 namespace tent
 {
 
-class byte_buffer;
 class piece_received_key;
 
 class file_handler
@@ -14,8 +18,8 @@ class file_handler
 public:
     file_handler(lt::file_index_t index, const lt::torrent_info& info);
 
-    void write(const piece_received_key& pos, byte_buffer& data);
-    void write(byte_buffer& data, std::int64_t offset, std::int64_t size);
+    void write(const piece_received_key& pos, mul::byte_buffer& data);
+    void write(mul::byte_buffer& data, std::int64_t offset, std::int64_t size);
 
 private:
     const lt::file_index_t index_;

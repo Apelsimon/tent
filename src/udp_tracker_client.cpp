@@ -71,7 +71,7 @@ void udp_tracker_client::read()
             /*const auto leechers = */buffer_.read_32();
             /*const auto seeders = */buffer_.read_32();
 
-            while(buffer_.read_available() >= 6)
+            while(buffer_.get_read_available() >= 6)
             {
                 const auto ipaddr = buffer_.read_32();
                 const auto port = buffer_.read_16();

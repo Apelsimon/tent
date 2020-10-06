@@ -1,11 +1,11 @@
 #!/bin/bash
 
 ROOT=`pwd`
-LIBTORRENT_BUILD_DIR=libtorrent/build
+LIBTORRENT_BUILD_DIR=extern/libtorrent/build
 BUILD_DIR=build
 
 # TODO: parse input
-rm -rf libtorrent/build 
+rm -rf extern/libtorrent/build 
 rm -rf build
 
 if [ ! -d "$LIBTORRET_BUILD_DIR" ]; then 

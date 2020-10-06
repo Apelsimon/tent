@@ -1,6 +1,5 @@
 #include "tracker_client.hpp"
 
-#include "byte_buffer.hpp"
 #include "endpoint.hpp"
 #include "http_client.hpp"
 #include "http_messages.hpp"
@@ -10,6 +9,8 @@
 #include "random.hpp"
 #include "udp_socket.hpp"
 #include "udp_tracker_client.hpp"
+
+#include "mul/byte_buffer.hpp"
 
 #include "spdlog/spdlog.h"
 

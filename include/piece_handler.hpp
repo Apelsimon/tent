@@ -7,6 +7,8 @@
 
 #include "libtorrent/torrent_info.hpp"
 
+#include "mul/byte_buffer.hpp"
+
 #include <queue>
 #include <string>
 
@@ -23,8 +25,8 @@ public:
     piece_handler(session& session, const lt::torrent_info& info);
 
     void have(const std::string& peer_id, uint32_t index);
-    void have(const std::string& peer_id, byte_buffer& bitfield);
-    void received(byte_buffer& piece);
+    void have(const std::string& peer_id, mul::byte_buffer& bitfield);
+    void received(mul::byte_buffer& piece);
     void print_left();
     std::pair<bool, msg::request> get_piece_request(const std::string& peer_id);
     int written() const { return written_pieces_; }

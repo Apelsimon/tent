@@ -1,7 +1,7 @@
 #ifndef PIECES_HPP_
 #define PIECES_HPP_
 
-#include "byte_buffer.hpp"
+#include "mul/byte_buffer.hpp"
 
 #include <cstdint>
 #include <unordered_set>
@@ -24,7 +24,7 @@ struct piece_received_key
 struct received_block
 {
   bool received_{false};
-  byte_buffer block_;
+  mul::byte_buffer block_;
 };
 
 using received_pieces_map = std::unordered_map<piece_received_key, received_block>;

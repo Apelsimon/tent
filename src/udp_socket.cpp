@@ -1,6 +1,6 @@
 #include "udp_socket.hpp"
 
-#include "byte_buffer.hpp"
+#include "mul/byte_buffer.hpp"
 
 #include <cstring>
 #include <sstream>
@@ -28,9 +28,9 @@ udp_socket::~udp_socket()
     }
 }
 
-ssize_t udp_socket::sendto(byte_buffer& buffer, const endpoint& ep, int flags)
+ssize_t udp_socket::sendto(mul::byte_buffer& buffer, const endpoint& ep, int flags)
 {
-    const auto res = ::sendto(fd_, buffer.get_read(), buffer.read_available(), flags, 
+    const auto res = ::sendto(fd_, buffer.get_read(), buffer.get_read_available(), flags, 
         ep.sockaddr(), sizeof(sockaddr_in));
     if(res > 0)
     {
@@ -39,10 +39,10 @@ ssize_t udp_socket::sendto(byte_buffer& buffer, const endpoint& ep, int flags)
     return res;
 }
 
-ssize_t udp_socket::recvfrom(byte_buffer& buffer, endpoint& ep, int flags)
+ssize_t udp_socket::recvfrom(mul::byte_buffer& buffer, endpoint& ep, int flags)
 {
     socklen_t addrlen = sizeof(sockaddr_in);
-    const auto res = ::recvfrom(fd_, buffer.get_write(), buffer.write_available(), flags,
+    const auto res = ::recvfrom(fd_, buffer.get_write(), buffer.get_write_available(), flags,
         ep.sockaddr(), &addrlen);
     if(res > 0)
     {

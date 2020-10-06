@@ -1,9 +1,10 @@
 #include "piece_handler.hpp"
 
-#include "byte_buffer.hpp"
 #include "session.hpp"
 
 #include "libtorrent/hasher.hpp"
+
+#include "mul/byte_buffer.hpp"
 
 #include <bitset>
 #include <iostream>
@@ -51,10 +52,10 @@ void piece_handler::have(const std::string& peer_id, uint32_t index)
     }
 }
 
-void piece_handler::have(const std::string& peer_id, byte_buffer& bitfield)
+void piece_handler::have(const std::string& peer_id, mul::byte_buffer& bitfield)
 {
     auto index_offset = 0;
-    while(bitfield.read_available() > 0)
+    while(bitfield.get_read_available() > 0)
     {
         std::bitset<8> bits{bitfield.read_8()};
         for(int i = bits.size() - 1; i >= 0; --i)
@@ -68,12 +69,12 @@ void piece_handler::have(const std::string& peer_id, byte_buffer& bitfield)
     }
 }
 
-void piece_handler::received(byte_buffer& piece)
+void piece_handler::received(mul::byte_buffer& piece)
 {
     piece_received_key key{piece.read_32(), piece.read_32()};
     if(!received_pieces_[key].received_)
     {
-        received_pieces_[key].block_.write(piece.get_read(), piece.read_available());
+        received_pieces_[key].block_.write(piece.get_read(), piece.get_read_available());
         received_pieces_[key].received_ = true;
 
         if(write_if_valid(key.index_))
@@ -173,7 +174,7 @@ bool piece_handler::write_if_valid(uint32_t index)
         }
         
         hasher.update(reinterpret_cast<const char*>(block.block_.get_read()), 
-            block.block_.read_available());
+            block.block_.get_read_available());
     }
 
     const auto piece_valid_for_print = hasher.final() == torrent_info_.hash_for_piece(index);

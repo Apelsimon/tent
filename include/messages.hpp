@@ -1,7 +1,7 @@
 #ifndef MESSAGES_HPP_
 #define MESSAGES_HPP_
 
-#include "byte_buffer.hpp"
+#include "mul/byte_buffer.hpp"
 
 #include <cstdint>
 
@@ -27,7 +27,7 @@ struct request
 
 struct piece
 {
-    piece(uint32_t index, uint32_t begin, const byte_buffer& block) :
+    piece(uint32_t index, uint32_t begin, const mul::byte_buffer& block) :
         index_(index),
         begin_(begin),
         block_(block)
@@ -35,7 +35,7 @@ struct piece
 
     uint32_t index_;
     uint32_t begin_;
-    byte_buffer block_;
+    mul::byte_buffer block_;
 };
 
 } // namespace msg

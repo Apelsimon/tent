@@ -18,8 +18,8 @@
 
 
 static size_t get_msg_len(const std::vector<uint8_t>& buffer, bool handshake_received);
-static bool set_peer_id_and_validate_handshake(const tent::byte_buffer& msg, tent::peer_info& peer_info);
-static tent::byte_buffer chop(std::vector<uint8_t>& buffer, size_t slice_len);
+static bool set_peer_id_and_validate_handshake(const mul::byte_buffer& msg, tent::peer_info& peer_info);
+static mul::byte_buffer chop(std::vector<uint8_t>& buffer, size_t slice_len);
 
 namespace tent 
 {
@@ -70,7 +70,7 @@ void torrent_agent::read()
         }
     }
 
-    if(io_buffer_.read_available() > 0)
+    if(io_buffer_.get_read_available() > 0)
     {
         on_read(io_buffer_);
     }
@@ -201,10 +201,10 @@ void torrent_agent::execute()
     }
 }
 
-void torrent_agent::on_read(const byte_buffer& buffer)
+void torrent_agent::on_read(const mul::byte_buffer& buffer)
 {
     msg_buffer_.insert(msg_buffer_.end(), buffer.get_read(), 
-        buffer.get_read() + buffer.read_available());
+        buffer.get_read() + buffer.get_read_available());
     
     auto msg_len = get_msg_len(msg_buffer_, sm_.handshake_received());
     while(msg_buffer_.size() >= 4 && msg_buffer_.size() >= msg_len)
@@ -228,10 +228,10 @@ void torrent_agent::on_read(const byte_buffer& buffer)
     }
 }
 
-bool torrent_agent::send(byte_buffer& buffer)
+bool torrent_agent::send(mul::byte_buffer& buffer)
 {
     errno = 0;
-    while(buffer.read_available() > 0)
+    while(buffer.get_read_available() > 0)
     {
         const auto res = socket_.write(buffer);
         if(res < 0)
@@ -331,7 +331,7 @@ size_t get_msg_len(const std::vector<uint8_t>& buffer, bool handshake_received)
     return ntohl(*reinterpret_cast<const uint32_t*>(buffer.data())) + 4;
 }
 
-bool set_peer_id_and_validate_handshake(const tent::byte_buffer& msg, tent::peer_info& peer_info)
+bool set_peer_id_and_validate_handshake(const mul::byte_buffer& msg, tent::peer_info& peer_info)
 {
     const auto proto_str_len = static_cast<uint8_t>(msg.peek_8());
     const auto proto_str = std::string{reinterpret_cast<const char*>(msg.get_read() + 1), proto_str_len};
@@ -342,13 +342,13 @@ bool set_peer_id_and_validate_handshake(const tent::byte_buffer& msg, tent::peer
         peer_info.id_ = peer_id;
     }
 
-    return msg.read_available() == static_cast<size_t>(proto_str_len + 49) && 
+    return msg.get_read_available() == static_cast<size_t>(proto_str_len + 49) && 
         proto_str == tent::protocol::V1;    
 }
 
-tent::byte_buffer chop(std::vector<uint8_t>& buffer, size_t slice_len)
+mul::byte_buffer chop(std::vector<uint8_t>& buffer, size_t slice_len)
 {
-    tent::byte_buffer slice;
+    mul::byte_buffer slice;
     slice.write(buffer.data(), slice_len);
     buffer.erase(buffer.begin(), buffer.begin() + slice_len);
 
